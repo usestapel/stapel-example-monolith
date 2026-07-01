@@ -1,0 +1,21 @@
+[submodule "stapel_workspaces"]
+	path = stapel_workspaces
+	url = https://github.com/usestapel/stapel-workspaces.git
+[submodule "stapel_billing"]
+	path = stapel_billing
+	url = https://github.com/usestapel/stapel-billing.git
+[submodule "stapel_core"]
+	path = stapel_core
+	url = https://github.com/usestapel/stapel-core.git
+[submodule "stapel_notifications"]
+	path = stapel_notifications
+	url = https://github.com/usestapel/stapel-notifications.git
+[submodule "stapel_cdn"]
+	path = stapel_cdn
+	url = https://github.com/usestapel/stapel-cdn.git
+[submodule "stapel_translate"]
+	path = stapel_translate
+	url = https://github.com/usestapel/stapel-translate.git
+[submodule "stapel_auth"]
+	path = stapel_auth
+	url = https://github.com/usestapel/stapel-auth.git
