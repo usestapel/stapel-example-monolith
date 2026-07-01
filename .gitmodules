@@ -19,3 +19,9 @@
 [submodule "stapel_auth"]
 	path = stapel_auth
 	url = https://github.com/usestapel/stapel-auth.git
+[submodule "stapel_profiles"]
+	path = stapel_profiles
+	url = https://github.com/usestapel/stapel-profiles.git
+[submodule "stapel_gdpr"]
+	path = stapel_gdpr
+	url = https://github.com/usestapel/stapel-gdpr.git
