@@ -1,0 +1,12 @@
+include:
+  - docker-compose.base.yml
+
+services:
+  # Add services from their individual .yml files:
+  # svc-app:
+  #   extends:
+  #     file: svc-app.yml
+  #     service: svc-app
+  #   volumes:
+  #     - ./svc-app:/app
+  #     - ./stapel_core:/app/stapel_core:ro

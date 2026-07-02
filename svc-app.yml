@@ -1,0 +1,61 @@
+services:
+  svc-app:
+    env_file: ".env"
+    image: ${IMAGE_TAG_APP}
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: svc-app/Dockerfile
+    command: >
+      sh -c "sh bootstrap.sh && ${RUN_CMD}"
+    environment:
+      POSTGRES_DB: "stapel_app"
+    volumes:
+      - static-content:/app/staticfiles
+      - media-content:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/health/\")'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  svc-app-celery:
+    env_file: ".env"
+    image: ${IMAGE_TAG_APP}
+    build:
+      context: .
+      dockerfile: svc-app/Dockerfile
+    command: >
+      sh -c "celery -A core worker --loglevel=info ${CELERY_WORKER_OPTS:-}"
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "stapel_app"
+    depends_on:
+      redis:
+        condition: service_started
+      svc-app:
+        condition: service_started
+
+  svc-app-celery-beat:
+    env_file: ".env"
+    image: ${IMAGE_TAG_APP}
+    build:
+      context: .
+      dockerfile: svc-app/Dockerfile
+    command: >
+      sh -c "celery -A core beat --loglevel=info"
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "stapel_app"
+    depends_on:
+      redis:
+        condition: service_started
+      svc-app-celery:
+        condition: service_started
+
