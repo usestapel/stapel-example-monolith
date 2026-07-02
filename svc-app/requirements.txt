@@ -1,12 +1,12 @@
 # Stapel framework — pinned release tags (the way any user installs it).
 # Listing every stapel package here lets pip satisfy the packages'
 # stapel-core>=0.2.0 dependency from git instead of PyPI.
-stapel-core @ git+https://github.com/usestapel/stapel-core.git@v0.2.1
-stapel-auth @ git+https://github.com/usestapel/stapel-auth.git@v0.2.0
+stapel-core @ git+https://github.com/usestapel/stapel-core.git@v0.2.2
+stapel-auth @ git+https://github.com/usestapel/stapel-auth.git@v0.3.0
 stapel-gdpr @ git+https://github.com/usestapel/stapel-gdpr.git@v0.2.0
 stapel-profiles @ git+https://github.com/usestapel/stapel-profiles.git@v0.2.0
 stapel-notifications @ git+https://github.com/usestapel/stapel-notifications.git@v0.2.0
-stapel-workspaces @ git+https://github.com/usestapel/stapel-workspaces.git@v0.2.0
+stapel-workspaces @ git+https://github.com/usestapel/stapel-workspaces.git@v0.2.1
 stapel-billing @ git+https://github.com/usestapel/stapel-billing.git@v0.2.0
 stapel-cdn @ git+https://github.com/usestapel/stapel-cdn.git@v0.2.0
 stapel-translate @ git+https://github.com/usestapel/stapel-translate.git@v0.2.0
