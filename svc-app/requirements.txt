@@ -1,30 +1,23 @@
-# Runtime dependencies of a Stapel service.
-# stapel_core itself is vendored as a git submodule at the project root
-# and copied into the image by the Dockerfile; these are its dependencies
-# plus the service runtime.
-Django>=5.1
-djangorestframework>=3.14
-djangorestframework-dataclasses>=1.2
-drf-spectacular>=0.27
-django-cors-headers>=4.3
-django-redis>=5.4
-PyJWT>=2.8
-cryptography>=41.0
-requests>=2.31
+# Stapel framework — pinned release tags (the way any user installs it).
+# Listing every stapel package here lets pip satisfy the packages'
+# stapel-core>=0.2.0 dependency from git instead of PyPI.
+stapel-core @ git+https://github.com/usestapel/stapel-core.git@v0.2.1
+stapel-auth @ git+https://github.com/usestapel/stapel-auth.git@v0.2.0
+stapel-gdpr @ git+https://github.com/usestapel/stapel-gdpr.git@v0.2.0
+stapel-profiles @ git+https://github.com/usestapel/stapel-profiles.git@v0.2.0
+stapel-notifications @ git+https://github.com/usestapel/stapel-notifications.git@v0.2.0
+stapel-workspaces @ git+https://github.com/usestapel/stapel-workspaces.git@v0.2.0
+stapel-billing @ git+https://github.com/usestapel/stapel-billing.git@v0.2.0
+stapel-cdn @ git+https://github.com/usestapel/stapel-cdn.git@v0.2.0
+stapel-translate @ git+https://github.com/usestapel/stapel-translate.git@v0.2.0
+
+# Service runtime
 psycopg[binary]>=3.1
 gunicorn>=21.2
 celery>=5.3
 
-# Dev / test (used by core.settings.dev and pytest)
+# Dev / test
 django-debug-toolbar>=4.2
 debugpy>=1.8
 pytest>=7.4
 pytest-django>=4.7
-
-# Add service-specific dependencies below.
-
-# Feature-module dependencies (stapel_auth, stapel_cdn, stapel_gdpr)
-pyotp>=2.10
-webauthn>=2.8
-phonenumbers>=8.13
-Pillow>=9.0
