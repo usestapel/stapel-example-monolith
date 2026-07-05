@@ -44,6 +44,27 @@ docker compose up -d
 docker compose run --rm svc-app python manage.py migrate
 ```
 
+## Codegen source (frontend pipeline)
+
+This monolith doubles as the **all-modules codegen source** (docs/flow-system.md
+§0.1): the single live instance from which the frontend's typed client is
+generated. Because emitting a schema is pure introspection, it runs on hermetic
+in-memory sqlite (`core/settings/codegen.py`) — no postgres, no redis.
+
+```bash
+make codegen          # → codegen/generated/{schema.json, flows.json}
+make codegen-check    # drift gate: regenerate + diff (red CI on divergence)
+```
+
+- `codegen/generated/schema.json` — unified OpenAPI for all 8 modules
+  (`spectacular` management command; identical to the runtime `/schema/`).
+- `codegen/generated/flows.json` — `generate_flow_docs` machine artifact.
+
+Downstream: `stapel-react`'s `pnpm gen:api` reads this `schema.json` and runs
+`openapi-typescript` → the typed `@stapel/core` API surface. Both sides are
+byte-stable, so a no-op regen is a no-op diff. `geo` is excluded (needs
+spatialite) and is not in this monolith's module set.
+
 ## Monolith vs microservices
 
 | | Monolith (this) | Microservices |
