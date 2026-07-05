@@ -138,7 +138,7 @@
         "operationId": "auth_api_anonymous_create",
         "description": "Create anonymous user\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Anonymous Auth"
         ],
         "requestBody": {
           "content": {
@@ -614,7 +614,7 @@
         "operationId": "auth_api_email_request_create",
         "description": "Request email verification code (OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per email/device\n- If authenticated non-anonymous user requests OTP for an email already registered to another account, returns 409 Conflict\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Email Auth"
         ],
         "requestBody": {
           "content": {
@@ -719,7 +719,7 @@
         "operationId": "auth_api_email_verify_create",
         "description": "Verify email and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new email** → REGISTERED (new account created)\n- **Unauthenticated user + existing email** → LOGGED_IN (login to existing account)\n- **Anonymous user + new email** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing email** → MERGED (anonymous merged into existing account)\n- **Authenticated user + own/new email** → MODIFIED (user adds/changes email)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user added/changed email\n\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Email Auth"
         ],
         "requestBody": {
           "content": {
@@ -1015,7 +1015,7 @@
         "operationId": "auth_api_logout_retrieve",
         "description": "Logout user via GET request (for cookie-based authentication). Blacklists both access and refresh tokens.\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Session"
         ],
         "security": [
           {
@@ -1057,7 +1057,7 @@
         "operationId": "auth_api_logout_create",
         "description": "Logout user and blacklist both access and refresh tokens\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Session"
         ],
         "requestBody": {
           "content": {
@@ -1199,7 +1199,7 @@
         "operationId": "auth_api_me_retrieve",
         "description": "Get current authenticated user information\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "User"
         ],
         "security": [
           {
@@ -1246,7 +1246,7 @@
           }
         ],
         "tags": [
-          "auth"
+          "OAuth"
         ],
         "security": [
           {
@@ -1276,7 +1276,7 @@
           }
         ],
         "tags": [
-          "auth"
+          "OAuth"
         ],
         "security": [
           {
@@ -1316,7 +1316,7 @@
           }
         ],
         "tags": [
-          "auth"
+          "OAuth"
         ],
         "security": [
           {
@@ -1346,7 +1346,7 @@
         "operationId": "auth_api_oauth_login_create",
         "description": "OAuth authentication (Google, Facebook, etc.). Returns `LoginResponse` — normally `AuthResponse` (status=LOGGED_IN); with the `OAUTH_STEP_UP` setting enabled and TOTP enrolled, `TOTPChallengeResponse` (status=TOTP_REQUIRED) — pass `challenge_token` to `POST /totp/challenge/verify/`.\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "OAuth"
         ],
         "requestBody": {
           "content": {
@@ -1410,13 +1410,51 @@
     "/auth/api/oauth2/introspect/": {
       "post": {
         "operationId": "auth_api_oauth2_introspect_create",
-        "description": "RFC 7662 token introspection endpoint.\n\nFor use by trusted internal services only (requires service API key).\nPOST body: ``token=<jwt_string>`` (application/x-www-form-urlencoded or JSON).\n\nReturns ``{\"active\": false}`` for invalid/expired tokens — not 401.",
+        "description": "Introspect a JWT. Requires a service API key. Returns `{\"active\": false}` for invalid/expired tokens (never 401 for those). A 401 is only returned when the caller's service API key is missing/invalid.",
+        "summary": "RFC 7662 token introspection (service-to-service)",
         "tags": [
-          "auth"
+          "OpenID"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenIntrospectRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenIntrospectRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenIntrospectRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenIntrospectResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -1585,6 +1623,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/_PasskeyRegOptions"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -2705,7 +2753,7 @@
         "operationId": "auth_api_phone_request_create",
         "description": "Request phone verification code (SMS OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per phone/device\n- If authenticated non-anonymous user requests OTP for a phone already registered to another account, returns 409 Conflict\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Phone Auth"
         ],
         "requestBody": {
           "content": {
@@ -2810,7 +2858,7 @@
         "operationId": "auth_api_phone_verify_create",
         "description": "Verify phone number and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new phone** → REGISTERED (new account created)\n- **Unauthenticated user + existing phone** → LOGGED_IN (login to existing account)\n- **Anonymous user + new phone** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing phone** → MERGED (anonymous merged into existing account)\n- **Authenticated user + own/new phone** → MODIFIED (user adds/changes phone)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user added/changed phone\n\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Phone Auth"
         ],
         "requestBody": {
           "content": {
@@ -2915,7 +2963,21 @@
         ],
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleStatusResponse"
+                },
+                "examples": {
+                  "SimpleStatusResponse": {
+                    "value": {
+                      "status": "ok"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
           },
           "400": {
             "content": {
@@ -2975,7 +3037,21 @@
         ],
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleStatusResponse"
+                },
+                "examples": {
+                  "SimpleStatusResponse": {
+                    "value": {
+                      "status": "ok"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
           },
           "404": {
             "content": {
@@ -3521,7 +3597,7 @@
         "operationId": "auth_api_sessions_list",
         "description": "List all active sessions for the current user.\n\n**Permissions:** `IsAuthenticated`",
         "tags": [
-          "auth"
+          "Session"
         ],
         "security": [
           {
@@ -3564,7 +3640,7 @@
         "operationId": "auth_api_sessions_destroy",
         "description": "Revoke all sessions except the current one.\n\n**Permissions:** `IsAuthenticated`",
         "tags": [
-          "auth"
+          "Session"
         ],
         "security": [
           {
@@ -3593,7 +3669,7 @@
           }
         ],
         "tags": [
-          "auth"
+          "Session"
         ],
         "security": [
           {
@@ -3632,7 +3708,7 @@
           }
         ],
         "tags": [
-          "auth"
+          "Session"
         ],
         "security": [
           {
@@ -3735,6 +3811,7 @@
     "/auth/api/sso/{slug}/saml/acs/": {
       "post": {
         "operationId": "auth_api_sso_saml_acs_create",
+        "description": "Backend-facing endpoint the IdP POSTs to after authentication. The body is an external, application/x-www-form-urlencoded form carrying a base64-encoded `SAMLResponse` (and optional `RelayState`) — its schema is defined by the SAML 2.0 spec, not this API. Always responds with a 302 redirect to the frontend (with session cookies on success, or an `?error=` query param on failure).\n\n**Permissions:** `AllowAny`",
         "summary": "SAML Assertion Consumer Service — IdP posts SAMLResponse here",
         "parameters": [
           {
@@ -3749,6 +3826,28 @@
         "tags": [
           "SSO"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            }
+          }
+        },
         "security": [
           {
             "JWTCookieAuth": []
@@ -3759,8 +3858,7 @@
           "302": {
             "description": "No response body"
           }
-        },
-        "description": "**Permissions:** `AllowAny`"
+        }
       }
     },
     "/auth/api/sso/{slug}/saml/metadata/": {
@@ -4633,6 +4731,16 @@
               }
             },
             "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -4656,6 +4764,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClosureStatusDTO"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -4705,6 +4823,17 @@
         "operationId": "auth_api_user_data_export_download_retrieve",
         "description": "Returns the ZIP archive. Link is valid for 7 days after export is ready.\n\n**Permissions:** `IsAuthenticated`",
         "summary": "Download data export archive",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Single-use download token bound to the authenticated user.",
+            "required": true
+          }
+        ],
         "tags": [
           "GDPR"
         ],
@@ -4715,7 +4844,45 @@
         ],
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "425": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       },
@@ -4726,6 +4893,26 @@
         "tags": [
           "GDPR"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRDownloadTokenRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRDownloadTokenRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRDownloadTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "security": [
           {
             "JWTCookieAuth": []
@@ -4733,7 +4920,45 @@
         ],
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "425": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -4757,6 +4982,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportRequestDTO"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -5157,7 +5392,7 @@
         "operationId": "auth_api_verify_create",
         "description": "Verify JWT token\n\n**Permissions:** `AllowAny`",
         "tags": [
-          "auth"
+          "Token"
         ],
         "requestBody": {
           "content": {
@@ -5389,7 +5624,7 @@
     "/billing/api/subscription/cancel": {
       "post": {
         "operationId": "billing_api_subscription_cancel_create",
-        "description": "Overridable serializer seam for every billing APIView.\n\nHost projects can swap the request/response serializer of any view by\nsubclassing and setting ``request_serializer_class`` /\n``response_serializer_class`` (or overriding the getters for\nper-request decisions) — no need to rewrite the HTTP method bodies.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Cancel the authenticated user's subscription. Cancels the subscription at the Stripe provider (when one exists) and marks it cancelled locally. Takes no request body.\n\n**Permissions:** `IsAuthenticated`",
         "tags": [
           "Subscription"
         ],
@@ -5404,6 +5639,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SubscriptionResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
                 }
               }
             },
@@ -5510,10 +5766,44 @@
     "/billing/api/webhooks/stripe": {
       "post": {
         "operationId": "billing_api_webhooks_stripe_create",
-        "description": "Overridable serializer seam for every billing APIView.\n\nHost projects can swap the request/response serializer of any view by\nsubclassing and setting ``request_serializer_class`` /\n``response_serializer_class`` (or overriding the getters for\nper-request decisions) — no need to rewrite the HTTP method bodies.\n\n**Permissions:** `AllowAny`",
+        "description": "External Stripe webhook endpoint. The request body is a raw Stripe Event object (JSON) whose authenticity is verified against the `Stripe-Signature` header using the configured webhook secret. Events are processed idempotently. Not called by first-party clients.\n\n**Permissions:** `AllowAny`",
+        "summary": "Stripe webhook receiver",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Stripe-Signature",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Stripe signature header used to verify the event payload.",
+            "required": true
+          }
+        ],
         "tags": [
           "Webhooks"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            }
+          }
+        },
         "security": [
           {
             "JWTCookieAuth": []
@@ -5522,7 +5812,36 @@
         ],
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -6124,20 +6443,16 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Image file to upload (jpg, png, gif, webp, bmp, heic, heif)"
-                  }
-                },
-                "required": [
-                  "file"
-                ]
+                "$ref": "#/components/schemas/FileUpload"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUpload"
               }
             }
-          }
+          },
+          "required": true
         },
         "security": [
           {
@@ -6149,9 +6464,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {},
-                  "description": "Unspecified response body"
+                  "$ref": "#/components/schemas/ImageUploadResponse"
                 },
                 "examples": {
                   "ImageUploadedSuccessfully": {
@@ -6159,11 +6472,15 @@
                       "message": "Image uploaded successfully",
                       "image": {
                         "id": "550e8400-e29b-41d4-a716-446655440000",
-                        "file_hash": "a1b2c3d4e5f6789...",
+                        "file_hash": "a1b2c3d4e5f6...",
                         "original_filename": "photo.jpg",
+                        "file_extension": ".jpg",
                         "original_width": 1920,
                         "original_height": 1080,
-                        "variant_720_url": "/media/cdn/images/720/a1b2c3d4.webp"
+                        "original_size": 2048576,
+                        "original_url": "/media/cdn/images/original/a1b2c3d4.jpg",
+                        "variant_720_url": "/media/cdn/images/720/a1b2c3d4.webp",
+                        "is_processed": false
                       }
                     },
                     "summary": "Image uploaded successfully"
@@ -6177,9 +6494,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {},
-                  "description": "Unspecified response body"
+                  "$ref": "#/components/schemas/ImageUploadResponse"
+                },
+                "examples": {
+                  "ImageAlreadyExists": {
+                    "value": {
+                      "message": "Image already exists",
+                      "image": {
+                        "id": "...",
+                        "file_hash": "..."
+                      }
+                    },
+                    "summary": "Image already exists"
+                  }
                 }
               }
             },
@@ -8136,72 +8463,72 @@
         ],
         "requestBody": {
           "content": {
-            "type": {
+            "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaTranslationUpsertRequest"
               }
             },
-            "properties": {
+            "application/x-www-form-urlencoded": {
               "schema": {
-                "key": {
-                  "type": "string",
-                  "description": "Translation key"
+                "$ref": "#/components/schemas/FigmaTranslationUpsertRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FigmaTranslationUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FigmaTranslationUpsertResponse"
                 },
-                "value": {
-                  "type": "string",
-                  "description": "Text value for the target language"
-                },
-                "comment": {
-                  "type": "string",
-                  "description": "Context/comment for translators"
-                },
-                "figma_url": {
-                  "type": "string",
-                  "description": "Figma selection URL to add as ref"
-                },
-                "lang": {
-                  "type": "string",
-                  "description": "Language to save to (default: en)"
-                },
-                "verify": {
-                  "type": "boolean",
-                  "description": "Set verified flag for the language"
-                },
-                "force": {
-                  "type": "boolean",
-                  "description": "Override verified guard and save anyway"
+                "examples": {
+                  "FigmaTranslationUpsertResponse": {
+                    "value": {
+                      "id": 42,
+                      "key": "common.save",
+                      "value": "Sauvegarder",
+                      "comment": "Save button label",
+                      "translator_comment": "Used in header",
+                      "refs": [
+                        "1:23",
+                        "4:56"
+                      ],
+                      "order": 10,
+                      "created": true
+                    }
+                  }
                 }
               }
             },
-            "required": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
-              }
-            }
-          }
-        },
-        "responses": {
+            "description": ""
+          },
           "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "integer"
-                    },
-                    "key": {
-                      "type": "string"
-                    },
+                  "$ref": "#/components/schemas/FigmaTranslationUpsertResponse"
+                },
+                "examples": {
+                  "FigmaTranslationUpsertResponse": {
                     "value": {
-                      "type": "string"
-                    },
-                    "created": {
-                      "type": "boolean"
+                      "id": 42,
+                      "key": "common.save",
+                      "value": "Sauvegarder",
+                      "comment": "Save button label",
+                      "translator_comment": "Used in header",
+                      "refs": [
+                        "1:23",
+                        "4:56"
+                      ],
+                      "order": 10,
+                      "created": true
                     }
                   }
                 }
@@ -8213,30 +8540,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
             "description": ""
           },
-          "409": {
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "existing": {
-                      "type": "object"
-                    }
-                  }
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -8331,54 +8645,61 @@
         ],
         "requestBody": {
           "content": {
-            "type": {
+            "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaRemoveRefRequest"
               }
             },
-            "properties": {
+            "application/x-www-form-urlencoded": {
               "schema": {
-                "key": {
-                  "type": "string",
-                  "description": "Translation key"
-                },
-                "figma_url": {
-                  "type": "string",
-                  "description": "Figma URL to remove from refs"
-                }
+                "$ref": "#/components/schemas/FigmaRemoveRefRequest"
               }
             },
-            "required": {
+            "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaRemoveRefRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "key": {
-                      "type": "string"
-                    },
-                    "ref_removed": {
-                      "type": "boolean"
-                    },
-                    "refs": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
+                  "$ref": "#/components/schemas/FigmaRemoveRefResponse"
+                },
+                "examples": {
+                  "FigmaRemoveRefResponse": {
+                    "value": {
+                      "key": "common.save",
+                      "ref_removed": true,
+                      "refs": [
+                        "1:23"
+                      ]
                     }
                   }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -8388,12 +8709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -8411,33 +8727,23 @@
         ],
         "requestBody": {
           "content": {
-            "type": {
+            "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaScreenshotUploadRequest"
               }
             },
-            "properties": {
+            "application/x-www-form-urlencoded": {
               "schema": {
-                "key": {
-                  "type": "string",
-                  "description": "Translation key"
-                },
-                "image": {
-                  "type": "string",
-                  "description": "Base64-encoded PNG image"
-                }
+                "$ref": "#/components/schemas/FigmaScreenshotUploadRequest"
               }
             },
-            "required": {
+            "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaScreenshotUploadRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -8458,16 +8764,31 @@
             },
             "description": ""
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
           "404": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -8485,74 +8806,62 @@
         ],
         "requestBody": {
           "content": {
-            "type": {
+            "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaSearchRequest"
               }
             },
-            "properties": {
+            "application/x-www-form-urlencoded": {
               "schema": {
-                "text": {
-                  "type": "string",
-                  "description": "English text to search for"
-                },
-                "figma_url": {
-                  "type": "string",
-                  "description": "Figma selection URL to add as ref if match found"
-                }
+                "$ref": "#/components/schemas/FigmaSearchRequest"
               }
             },
-            "required": {
+            "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaSearchRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "found": {
-                      "type": "boolean"
-                    },
-                    "entry": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "integer"
-                        },
-                        "key": {
-                          "type": "string"
-                        },
-                        "en": {
-                          "type": "string"
-                        },
-                        "comment": {
-                          "type": "string"
-                        },
-                        "source": {
-                          "type": "string"
-                        },
-                        "refs": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        }
-                      }
-                    },
-                    "ref_added": {
-                      "type": "boolean"
+                  "$ref": "#/components/schemas/FigmaSearchResponse"
+                },
+                "examples": {
+                  "FigmaSearchResponse": {
+                    "value": {
+                      "found": true,
+                      "entry": {
+                        "id": 42,
+                        "key": "common.save"
+                      },
+                      "ref_added": true
                     }
                   }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -8570,69 +8879,59 @@
         ],
         "requestBody": {
           "content": {
-            "type": {
+            "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaSyncRequest"
               }
             },
-            "properties": {
+            "application/x-www-form-urlencoded": {
               "schema": {
-                "entries": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "key": {
-                        "type": "string"
-                      },
-                      "currentText": {
-                        "type": "string"
-                      },
-                      "figmaUrl": {
-                        "type": "string"
-                      },
-                      "containerName": {
-                        "type": "string"
-                      },
-                      "order": {
-                        "type": "integer"
-                      }
-                    },
-                    "required": [
-                      "key"
-                    ]
-                  }
-                }
+                "$ref": "#/components/schemas/FigmaSyncRequest"
               }
             },
-            "required": {
+            "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {},
-                "description": "Unspecified request body"
+                "$ref": "#/components/schemas/FigmaSyncRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "synced": {
-                      "type": "integer"
-                    },
-                    "created": {
-                      "type": "integer"
-                    },
-                    "updated": {
-                      "type": "integer"
+                  "$ref": "#/components/schemas/FigmaSyncResponse"
+                },
+                "examples": {
+                  "FigmaSyncResponse": {
+                    "value": {
+                      "synced": 50,
+                      "created": 5,
+                      "updated": 12
                     }
                   }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -9517,7 +9816,7 @@
           }
         ],
         "tags": [
-          "workspaces"
+          "Internal"
         ],
         "security": [
           {
@@ -9526,7 +9825,24 @@
         ],
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalPersonalWorkspaceResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -10312,6 +10628,77 @@
           "title"
         ]
       },
+      "FigmaRemoveRefRequest": {
+        "type": "object",
+        "description": "Body for removing a Figma URL ref from a translation entry.",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Translation key"
+          },
+          "figma_url": {
+            "type": "string",
+            "description": "Figma URL to remove from refs"
+          },
+          "screen_name": {
+            "type": "string",
+            "description": "Figma screen name to remove from comment"
+          }
+        },
+        "required": [
+          "figma_url",
+          "key"
+        ]
+      },
+      "FigmaRemoveRefResponse": {
+        "type": "object",
+        "description": "Figma ref removal result.",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Translation key",
+            "example": "common.save"
+          },
+          "ref_removed": {
+            "type": "boolean",
+            "description": "Whether the ref was removed",
+            "example": true
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Remaining Figma refs after removal",
+            "example": [
+              "1:23"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "ref_removed",
+          "refs"
+        ]
+      },
+      "FigmaScreenshotUploadRequest": {
+        "type": "object",
+        "description": "Body for uploading a screen screenshot for a translation key.",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Translation key"
+          },
+          "image": {
+            "type": "string",
+            "description": "Base64-encoded PNG image"
+          }
+        },
+        "required": [
+          "image",
+          "key"
+        ]
+      },
       "FigmaScreenshotUploadResponse": {
         "type": "object",
         "description": "Screenshot upload result for a single key.",
@@ -10330,6 +10717,261 @@
         "required": [
           "key",
           "uploaded"
+        ]
+      },
+      "FigmaSearchRequest": {
+        "type": "object",
+        "description": "Body for searching a translation by exact English text.",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "English text to search for"
+          },
+          "figma_url": {
+            "type": "string",
+            "description": "Figma selection URL to add as ref if a match is found"
+          },
+          "screen_name": {
+            "type": "string",
+            "description": "Figma screen name appended to comment"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "FigmaSearchResponse": {
+        "type": "object",
+        "description": "Search for translation entry by text (Figma plugin).",
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "description": "Whether a match was found",
+            "example": true
+          },
+          "entry": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "Matched translation entry object",
+            "example": {
+              "id": 42,
+              "key": "common.save"
+            }
+          },
+          "ref_added": {
+            "type": "boolean",
+            "description": "Whether a Figma ref was added to the entry",
+            "example": true
+          }
+        },
+        "required": [
+          "entry",
+          "found",
+          "ref_added"
+        ]
+      },
+      "FigmaSyncEntry": {
+        "type": "object",
+        "description": "A single Figma node in a bulk-sync payload.",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Translation key"
+          },
+          "currentText": {
+            "type": "string",
+            "description": "Current text of the node"
+          },
+          "figmaUrl": {
+            "type": "string",
+            "description": "Figma node URL"
+          },
+          "containerName": {
+            "type": "string",
+            "description": "Screen/container name"
+          },
+          "order": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Ordering index"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "FigmaSyncRequest": {
+        "type": "object",
+        "description": "Body for a bulk sync of Figma translatable nodes.",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FigmaSyncEntry"
+            },
+            "description": "Figma nodes to sync"
+          }
+        },
+        "required": [
+          "entries"
+        ]
+      },
+      "FigmaSyncResponse": {
+        "type": "object",
+        "description": "Figma bulk sync result.",
+        "properties": {
+          "synced": {
+            "type": "integer",
+            "description": "Total entries processed",
+            "example": 50
+          },
+          "created": {
+            "type": "integer",
+            "description": "New entries created",
+            "example": 5
+          },
+          "updated": {
+            "type": "integer",
+            "description": "Existing entries updated",
+            "example": 12
+          }
+        },
+        "required": [
+          "created",
+          "synced",
+          "updated"
+        ]
+      },
+      "FigmaTranslationUpsertRequest": {
+        "type": "object",
+        "description": "Body for creating/updating a translation entry from Figma.",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Translation key"
+          },
+          "value": {
+            "type": "string",
+            "description": "Text value for the target language"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Context/comment for translators"
+          },
+          "figma_url": {
+            "type": "string",
+            "description": "Figma selection URL to add as ref"
+          },
+          "lang": {
+            "type": "string",
+            "description": "Language to save to (default: en)"
+          },
+          "verify": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set verified flag for the language"
+          },
+          "force": {
+            "type": "boolean",
+            "default": false,
+            "description": "Override verified guard and save anyway"
+          },
+          "order": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Ordering index"
+          },
+          "author_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Author email recorded in translation history"
+          },
+          "author_name": {
+            "type": "string",
+            "description": "Author name recorded in history"
+          },
+          "screen_name": {
+            "type": "string",
+            "description": "Figma screen name appended to comment"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ]
+      },
+      "FigmaTranslationUpsertResponse": {
+        "type": "object",
+        "description": "Created or updated translation entry (Figma plugin).",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Entry database ID",
+            "example": 42
+          },
+          "key": {
+            "type": "string",
+            "description": "Translation key",
+            "example": "common.save"
+          },
+          "value": {
+            "type": "string",
+            "description": "Translation text",
+            "example": "Sauvegarder"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Admin comment",
+            "example": "Save button label"
+          },
+          "translator_comment": {
+            "type": "string",
+            "description": "Translator note",
+            "example": "Used in header"
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Figma node references",
+            "example": [
+              "1:23",
+              "4:56"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Sort order",
+            "example": 10
+          },
+          "created": {
+            "type": "boolean",
+            "description": "True if newly created",
+            "example": true
+          },
+          "updated": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "True if an existing entry was modified"
+          },
+          "verified": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Verification status after upsert"
+          }
+        },
+        "required": [
+          "comment",
+          "created",
+          "id",
+          "key",
+          "order",
+          "refs",
+          "translator_comment",
+          "value"
         ]
       },
       "FileExists": {
@@ -10409,6 +11051,7 @@
           },
           "original_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "URL to original uploaded file"
           },
@@ -10448,6 +11091,20 @@
           "updated_at",
           "uploaded_by",
           "uploaded_by_username"
+        ]
+      },
+      "FileUpload": {
+        "type": "object",
+        "description": "Serializer for file upload requests.\n\nUpload a file using multipart/form-data with the 'file' field.",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "uri",
+            "description": "The file to upload. Images: jpg, jpeg, png, gif, webp, bmp, heic, heif. Videos: mp4, webm, mov, avi, mkv."
+          }
+        },
+        "required": [
+          "file"
         ]
       },
       "FileUploadResponse": {
@@ -10525,6 +11182,18 @@
           "following"
         ]
       },
+      "GDPRDownloadTokenRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Single-use download token bound to the authenticated user."
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
       "Image": {
         "type": "object",
         "description": "Serializer for Image model.\n\nReturns complete image information including all generated variants.\nVariants are auto-generated in WebP format for optimal compression.",
@@ -10576,66 +11245,79 @@
           },
           "original_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "URL to original uploaded image"
           },
           "variant_16_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "16px thumbnail (WebP)"
           },
           "variant_32_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "32px thumbnail (WebP)"
           },
           "variant_64_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "64px thumbnail (WebP)"
           },
           "variant_120_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "120px thumbnail (WebP)"
           },
           "variant_160_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "160px preview (WebP)"
           },
           "variant_240_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "240px preview (WebP)"
           },
           "variant_480_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "480px medium (WebP)"
           },
           "variant_720_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "720px HD (WebP)"
           },
           "variant_720_jpg_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "720px HD (JPEG fallback)"
           },
           "variant_1080_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "1080px Full HD (WebP)"
           },
           "variant_1440_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "1440px 2K (WebP)"
           },
           "variant_2160_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true,
             "description": "2160px 4K (WebP)"
           },
@@ -10854,6 +11536,20 @@
           "status"
         ]
       },
+      "InternalPersonalWorkspaceResponse": {
+        "type": "object",
+        "description": "Get-or-create result for a user's personal workspace (service-to-service).",
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Personal workspace UUID."
+          }
+        },
+        "required": [
+          "workspace_id"
+        ]
+      },
       "InvitationAcceptRequest": {
         "type": "object",
         "description": "Accept an invite.",
@@ -11049,6 +11745,27 @@
           "name",
           "total",
           "unverified",
+          "verified"
+        ]
+      },
+      "LanguageTranslation": {
+        "type": "object",
+        "description": "Serializer for a single language translation.",
+        "properties": {
+          "lang": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "verified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lang",
+          "value",
           "verified"
         ]
       },
@@ -12147,15 +12864,19 @@
             "maxLength": 255
           },
           "followers_count": {
-            "type": "string",
+            "type": "integer",
+            "description": "Get count of users following this profile.",
             "readOnly": true
           },
           "following_count": {
-            "type": "string",
+            "type": "integer",
+            "description": "Get count of users this profile is following.",
             "readOnly": true
           },
           "relationship_status": {
             "type": "string",
+            "nullable": true,
+            "description": "Get relationship status with current user.",
             "readOnly": true
           }
         },
@@ -13207,6 +13928,60 @@
           "step_up_token"
         ]
       },
+      "TokenIntrospectRequest": {
+        "type": "object",
+        "description": "RFC 7662 introspection request body.",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The JWT access token to introspect."
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "TokenIntrospectResponse": {
+        "type": "object",
+        "description": "RFC 7662 introspection response.\n\n``active`` is always present; the claim fields are only populated when the\ntoken is valid.",
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "description": "Whether the token is currently valid."
+          },
+          "sub": {
+            "type": "string",
+            "description": "Subject (user_id) claim."
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "exp": {
+            "type": "integer",
+            "description": "Expiry (unix ts)."
+          },
+          "iat": {
+            "type": "integer",
+            "description": "Issued-at (unix ts)."
+          },
+          "iss": {
+            "type": "string",
+            "description": "Issuer."
+          },
+          "token_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "active"
+        ]
+      },
       "TokenObtainRequest": {
         "type": "object",
         "properties": {
@@ -13382,7 +14157,10 @@
             "description": "Whether this translation was generated by LLM"
           },
           "translations": {
-            "type": "string",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LanguageTranslation"
+            },
             "readOnly": true
           }
         },
@@ -13463,10 +14241,11 @@
           },
           "value": {
             "type": "string",
+            "description": "Given the *incoming* primitive data, return the value for this field\nthat should be validated and transformed to a native value.",
             "readOnly": true
           },
           "verified": {
-            "type": "string",
+            "type": "boolean",
             "readOnly": true
           },
           "source": {
@@ -13833,34 +14612,42 @@
           },
           "original_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "variant_16p_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "variant_32p_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "variant_240p_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "variant_480p_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "variant_720p_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "variant_1080p_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "variant_2160p_url": {
             "type": "string",
+            "format": "uri",
             "readOnly": true
           },
           "is_processed": {
