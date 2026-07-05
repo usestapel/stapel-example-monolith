@@ -1,0 +1,37 @@
+name: codegen-drift
+
+# Drift gate for the committed backend codegen artifacts
+# (codegen/generated/schema.json + flows.json). The monolith is the
+# all-modules codegen source (docs/flow-system.md §0.1); these artifacts are
+# what the frontend TS client is generated from, so a stale commit silently
+# drifts the frontend types from the API. `make codegen-check` regenerates
+# into a temp dir and diffs against the committed files — red on any
+# divergence (the byte-stable encoding makes a no-op regen a no-op diff).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  codegen-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: svc-app/requirements.txt
+
+      - name: Install the monolith (all stapel modules, from PyPI)
+        run: pip install -r svc-app/requirements.txt
+
+      - name: codegen drift gate
+        # PYTHON=python overrides the Makefile's local-venv default so the gate
+        # runs against the CI interpreter. generate.sh boots the monolith on
+        # hermetic sqlite (core.settings.codegen) and emits schema.json +
+        # flows.json; the recipe diffs them against the committed artifacts.
+        run: make codegen-check PYTHON=python
