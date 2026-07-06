@@ -25,8 +25,11 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 ALLOWED_HOSTS = ALLOWED_HOSTS + ["svc-app"]  # type: ignore[name-defined]
 
 # Prefix of the dedicated auth service (e.g. "auth") when running in a
-# multi-service stack. Leave empty to use Django's own admin login.
-AUTH_SERVICE_PREFIX = os.getenv("AUTH_SERVICE_PREFIX", "")
+# multi-service stack. Empty (the monolith default) = no external auth
+# service: LOGIN_URL/LOGOUT_REDIRECT_URL derive to this instance's own
+# reverse("admin:login") via the stapel_core mount registry, so they follow
+# any prefix the deployment mounts the whole project under.
+STAPEL_AUTH_SERVICE_PREFIX = os.getenv("STAPEL_AUTH_SERVICE_PREFIX", "")
 
 INSTALLED_APPS = COMMON_INSTALLED_APPS + [
     "stapel_auth",
@@ -57,7 +60,9 @@ CACHES = {
     }
 }
 
-LOGIN_REDIRECT_URL = "/admin/"
+# URL *name*, not a hardcoded path (house convention: absolute paths break
+# under a mount prefix; Django's resolve_url() reverses names lazily).
+LOGIN_REDIRECT_URL = "admin:index"
 AUTH_USER_MODEL = "users.User"
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
