@@ -90,6 +90,51 @@ See `stapel-categories/MODULE.md` ("Catalog fixtures") and
 `docs/catalog-fixtures-sync.md` for the full mechanism (natural keys,
 conflict policy, `is_test` exclusion).
 
+## Admin suite (staff mandate) — live example
+
+This monolith wires the whole admin suite (docs/admin-suite.md) end to end:
+staff permissions are **computed** from (model `@access` declaration × role
+clearance), no rows in `auth_permission`.
+
+- **Backends** (`core/settings/base.py`): `MandateBackend` (MAC) +
+  `AuditedModelBackend` (DAC overlay — manual grants keep working, grants used
+  above the mandate are logged + signalled).
+- **Roles**: builtins `viewer`(LOW) / `editor`(MID) / `admin`(HIGH) plus a
+  custom domain-scoped `accountant` — LOW everywhere, HIGH inside `billing`
+  (note: the scope key is the app *label*). The auth-hosting monolith reads
+  roles from the assignment table first (`assignment_roles` in
+  `ROLE_SOURCES`), so a revocation lands on the next request.
+- **Demo staff** (`bootstrap.sh` → `seed_demo_staff --seed-if-empty`,
+  idempotent like the catalog seed): `demo-viewer` / `demo-editor` /
+  `demo-admin` / `demo-accountant`, one role each, password
+  `demo-pass-1234`. Log into `/admin/` as each to *see* the mandate: the
+  viewer reads but cannot edit, the editor edits but cannot delete, the
+  accountant has full reach in Billing only.
+- **Ops visibility**: `SHOW_OPS_MODELS=true` in `.env` (dev) lets staff view
+  the outbox/taskstore/eventstore journals read-only; unset it (prod) and
+  they are superuser-read-only.
+- **Step-up on HIGH**: stapel-auth is installed → verification factors exist →
+  deleting through a `StapelModelAdmin` needs a fresh step-up grant even for
+  the `admin` role. Plain `ModelAdmin`s (like this example's `WalletAdmin`)
+  are mandate-enforced but not step-up-gated — the trade-off is pinned in the
+  smoke tests.
+
+The behavior matrix is executable:
+`svc-app/app/tests/test_admin_suite.py` (mandate matrix via `has_perm`, ops
+visibility via the admin client, step-up allow/deny) and
+`test_demo_staff_seed.py` (bootstrap contract). Migration guide for existing
+projects: stapel-core `MODULE.md` → "Migrating an existing project to the
+mandate".
+
+## Tests
+
+```bash
+cd svc-app && python -m pytest app/   # hermetic: in-memory sqlite + locmem cache
+```
+
+`core/settings/test.py` is the pytest profile (no postgres/redis needed; it
+layers on `base`, not `dev`, so debug-toolbar stays out of the import chain).
+
 ## Monolith vs microservices
 
 | | Monolith (this) | Microservices |

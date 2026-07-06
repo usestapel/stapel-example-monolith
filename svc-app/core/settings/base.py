@@ -71,6 +71,62 @@ CACHES = {
 LOGIN_REDIRECT_URL = "admin:index"
 AUTH_USER_MODEL = "users.User"
 
+# =============================================================================
+# ADMIN SUITE — the staff mandate, wired end to end (docs/admin-suite.md, AS-7)
+# =============================================================================
+# This monolith is the live reference for the admin suite: staff rights are a
+# *computed function* of (model @access declaration × role clearance), never
+# rows piled into auth_permission. The three moving parts below are all a host
+# project ever configures — declarations live on the models in the libraries.
+
+# 1. The backend chain. MandateBackend is the MAC half (grants strictly by
+#    declaration × clearance); AuditedModelBackend is the DAC overlay (a plain
+#    ModelBackend that still honors manual grants, but logs + signals any grant
+#    used *above* the mandate — set STAPEL_ACCESS["STRICT"]=True to deny those
+#    instead). Replacing the default single ModelBackend with this pair is the
+#    whole opt-in: with no roles assigned the chain behaves exactly like stock
+#    Django (superuser everything, staff by manual grants).
+AUTHENTICATION_BACKENDS = [
+    "stapel_core.access.backend.MandateBackend",
+    "stapel_core.access.backend.AuditedModelBackend",
+]
+
+# 2. Role definitions (name → clearance profile) — deploy config, identical
+#    across every service of a deployment; assignments (user → roles) live in
+#    the auth service. The builtins viewer(LOW)/editor(MID)/admin(HIGH) come
+#    for free; we add a domain-scoped custom role to show the shape: an
+#    "accountant" is LOW-clearance everywhere but HIGH inside billing, so it can
+#    fully manage wallets/transactions without any reach into other apps.
+#    NB: the scope key is the app *label* ("billing"), not the package name.
+STAPEL_ACCESS = {
+    "ROLES": {
+        "accountant": {"clearance": "low", "apps": {"billing": "high"}},
+    },
+    # The monolith hosts its own auth, so read roles straight from the
+    # assignment table first (freshest — a revocation lands on the next
+    # request, no token refresh needed), then fall through the standard
+    # claim → local-field → role:* group chain used by remote services.
+    "ROLE_SOURCES": [
+        "stapel_auth.staff_roles.assignment_roles",
+        "stapel_core.access.sources.claim_roles",
+        "stapel_core.access.sources.user_field_roles",
+        "stapel_core.access.sources.group_roles",
+    ],
+    # Step-up on HIGH operations (delete in the standard preset) is ON by
+    # default — stapel-auth registers OTP/TOTP/passkey factors, so the gate is
+    # live here (it self-disables only where no factor exists, e.g. the minimal
+    # example). Left implicit; override STAPEL_ACCESS["STEP_UP"] to tune.
+}
+
+# 3. Admin visibility. SHOW_OPS_MODELS is the only knob a host usually flips:
+#    ops journals (outbox/taskstore/eventstore/StripeWebhookEvent…) stay hidden
+#    from staff and superuser-read-only by default; turning it on lets any staff
+#    *view* them (still read-only) — handy in dev. It is env-readable
+#    (SHOW_OPS_MODELS=true in .env for dev), unlike the trust-shaping ACCESS
+#    keys, so no settings edit is needed to toggle it per environment.
+# (No STAPEL_ADMIN block is required: SHOW_OPS_MODELS resolves from the env,
+#  and MODELS/NAV_LINKS default empty. Add STAPEL_ADMIN here to override.)
+
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 
