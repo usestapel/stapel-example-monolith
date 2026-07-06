@@ -40,6 +40,12 @@ INSTALLED_APPS = COMMON_INSTALLED_APPS + [
     "stapel_billing",
     "stapel_cdn",
     "stapel_translate",
+    # django-treenode registers the tree-cache signals its AppConfig.ready()
+    # wires up (required for stapel_categories' tn_* fields) — must be
+    # installed alongside stapel_categories, not just pip-resolved as its
+    # transitive dependency.
+    "treenode",
+    "stapel_categories",
     "app",
 ]
 

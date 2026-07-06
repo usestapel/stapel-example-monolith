@@ -40,6 +40,7 @@ urlpatterns = [
     path("workspaces/api/", include("stapel_workspaces.urls")),
     path("billing/api/", include("stapel_billing.urls")),
     path("cdn/api/", include("stapel_cdn.urls")),
+    path("categories/api/", include("stapel_categories.urls")),
     # stapel_translate.urls carries its own "translate/..." prefix
     path("", include("stapel_translate.urls")),
 

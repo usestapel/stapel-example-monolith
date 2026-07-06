@@ -9,6 +9,7 @@ stapel-workspaces>=0.3.1,<0.4
 stapel-billing>=0.4.0,<0.5
 stapel-cdn>=0.4.0,<0.5
 stapel-translate>=0.4.0,<0.5
+stapel-categories>=0.4.0,<0.5
 
 # Service runtime
 psycopg[binary]>=3.1
