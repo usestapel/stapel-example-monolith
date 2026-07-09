@@ -1,13 +1,14 @@
 # Stapel example monolith — codegen source (docs/flow-system.md §0.1).
 #
 # The monolith doubles as the all-modules codegen instance: it emits the unified
-# OpenAPI schema.json + flows.json that the frontend TS client is generated from.
+# OpenAPI schema.json + flows.json + errors.json + localized feature bundles that
+# the frontend TS client is generated from.
 PYTHON ?= /Users/apple/Projects/stapel/.venv/bin/python
 GEN_DIR := codegen/generated
 
 .PHONY: codegen codegen-check
 
-# Regenerate the committed backend artifacts (schema.json + flows.json).
+# Regenerate the committed backend artifacts.
 codegen:
 	PYTHON=$(PYTHON) codegen/generate.sh $(abspath $(GEN_DIR))
 

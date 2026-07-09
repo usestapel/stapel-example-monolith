@@ -6,10 +6,6 @@ echo "Waiting for database..."
 until pg_isready -h "$DB_HOST_DIRECT" -p "$DB_PORT_DIRECT" -U "$POSTGRES_USER"; do sleep 1; done
 echo "Applying migrations..."
 POSTGRES_HOST="$DB_HOST_DIRECT" POSTGRES_PORT="$DB_PORT_DIRECT" python manage.py migrate --noinput
-echo "Seeding catalog (no-op if already populated)..."
-POSTGRES_HOST="$DB_HOST_DIRECT" POSTGRES_PORT="$DB_PORT_DIRECT" python manage.py load_catalog --seed-if-empty
-echo "Seeding demo staff — one user per admin-suite role (no-op if already present)..."
-POSTGRES_HOST="$DB_HOST_DIRECT" POSTGRES_PORT="$DB_PORT_DIRECT" python manage.py seed_demo_staff --seed-if-empty
 echo "Collecting static..."
 python manage.py collectstatic --noinput --clear --verbosity 0
 echo "Bootstrap done."

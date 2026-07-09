@@ -19,43 +19,21 @@ services:
       redis:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/health/\")'"]
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/app/api/health/\")'"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
 
-  svc-app-celery:
-    env_file: ".env"
-    image: ${IMAGE_TAG_APP}
-    build:
-      context: .
-      dockerfile: svc-app/Dockerfile
-    command: >
-      sh -c "celery -A core worker --loglevel=info ${CELERY_WORKER_OPTS:-}"
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: "stapel_app"
-    depends_on:
-      redis:
-        condition: service_started
-      svc-app:
-        condition: service_started
-
-  svc-app-celery-beat:
-    env_file: ".env"
-    image: ${IMAGE_TAG_APP}
-    build:
-      context: .
-      dockerfile: svc-app/Dockerfile
-    command: >
-      sh -c "celery -A core beat --loglevel=info"
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: "stapel_app"
-    depends_on:
-      redis:
-        condition: service_started
-      svc-app-celery:
-        condition: service_started
-
+  # Uncomment when FUNCTION_TRANSPORT=nats: serves this service's comm
+  # Functions over NATS request-reply (see manage.py serve_functions).
+  # svc-app-functions:
+  #   env_file: ".env"
+  #   image: ${IMAGE_TAG_APP}
+  #   command: sh -c "python manage.py serve_functions"
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: "stapel_app"
+  #   depends_on:
+  #     - nats
+  #     - db
