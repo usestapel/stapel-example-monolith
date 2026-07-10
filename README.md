@@ -44,7 +44,7 @@ docker compose run --rm svc-app python manage.py migrate
 
 ## Codegen source (frontend pipeline)
 
-This monolith doubles as the **all-modules codegen source** (docs/flow-system.md
+This monolith doubles as the **all-modules codegen source** (docs/done/flow-system-v1.md
 §0.1): the single live instance from which the frontend's typed client is
 generated. Because emitting a schema is pure introspection, it runs on hermetic
 in-memory sqlite (`config/settings/codegen.py`) — no postgres, no redis.
