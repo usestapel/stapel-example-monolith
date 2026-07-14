@@ -16085,13 +16085,13 @@
             "type": "string",
             "format": "uri",
             "description": "IdP SSO URL (redirect binding)",
-            "maxLength": 200
+            "maxLength": 500
           },
           "saml_slo_url": {
             "type": "string",
             "format": "uri",
             "description": "IdP SLO URL (optional)",
-            "maxLength": 200
+            "maxLength": 500
           },
           "saml_x509_cert": {
             "type": "string",
@@ -16125,7 +16125,7 @@
             "type": "string",
             "format": "uri",
             "description": ".well-known/openid-configuration URL",
-            "maxLength": 200
+            "maxLength": 500
           },
           "oidc_scopes": {
             "type": "string",
@@ -17959,7 +17959,7 @@
             "type": "string",
             "format": "uri",
             "nullable": true,
-            "maxLength": 200
+            "maxLength": 500
           },
           "bio": {
             "type": "string",
@@ -18662,13 +18662,13 @@
             "type": "string",
             "format": "uri",
             "description": "IdP SSO URL (redirect binding)",
-            "maxLength": 200
+            "maxLength": 500
           },
           "saml_slo_url": {
             "type": "string",
             "format": "uri",
             "description": "IdP SLO URL (optional)",
-            "maxLength": 200
+            "maxLength": 500
           },
           "saml_x509_cert": {
             "type": "string",
@@ -18702,7 +18702,7 @@
             "type": "string",
             "format": "uri",
             "description": ".well-known/openid-configuration URL",
-            "maxLength": 200
+            "maxLength": 500
           },
           "oidc_scopes": {
             "type": "string",
