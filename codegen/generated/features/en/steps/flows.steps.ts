@@ -14,14 +14,14 @@ Given(/^The user enters their login and password on the login form$/, async ({ s
     throw new Error("pending UI step: auth.password_login step 0");
 });
 
-// auth.password_login — step 1 (http · POST /auth/api/password/login/)
+// auth.password_login — step 1 (http · POST /auth/api/v1/password/login/)
 When(/^Verify the password; 423 when locked out; with TOTP enabled and PASSWORD_LOGIN_STEP_UP — a TOTP_REQUIRED response with a challenge_token$/, async ({ stapel }) => {
-    stapel.response = await stapel.client.request("/auth/api/password/login/", { method: "POST" });
+    stapel.response = await stapel.client.request("/auth/api/v1/password/login/", { method: "POST" });
 });
 
-// auth.password_login — step 2 (http · POST /auth/api/totp/challenge/verify/)
+// auth.password_login — step 2 (http · POST /auth/api/v1/totp/challenge/verify/)
 Then(/^Optional step \(only on TOTP_REQUIRED\): exchange the challenge_token and the authenticator code for a JWT session$/, async ({ stapel }) => {
-    stapel.response = await stapel.client.request("/auth/api/totp/challenge/verify/", { method: "POST" });
+    stapel.response = await stapel.client.request("/auth/api/v1/totp/challenge/verify/", { method: "POST" });
 });
 
 // auth.passwordless_login — step 0 (human)
@@ -30,14 +30,14 @@ Given(/^The user enters their email on the login form$/, async ({ stapel }) => {
     throw new Error("pending UI step: auth.passwordless_login step 0");
 });
 
-// auth.passwordless_login — step 1 (http · POST /auth/api/email/request/)
+// auth.passwordless_login — step 1 (http · POST /auth/api/v1/email/request/)
 When(/^Request a one-time code by email; 429 on rate limit, 422 when the address is locked$/, async ({ stapel }) => {
-    stapel.response = await stapel.client.request("/auth/api/email/request/", { method: "POST" });
+    stapel.response = await stapel.client.request("/auth/api/v1/email/request/", { method: "POST" });
 });
 
-// auth.passwordless_login — step 2 (http · POST /auth/api/email/verify/)
+// auth.passwordless_login — step 2 (http · POST /auth/api/v1/email/verify/)
 When(/^Exchange the code for a JWT session; a wrong code decrements the attempt counter$/, async ({ stapel }) => {
-    stapel.response = await stapel.client.request("/auth/api/email/verify/", { method: "POST" });
+    stapel.response = await stapel.client.request("/auth/api/v1/email/verify/", { method: "POST" });
 });
 
 // auth.passwordless_login — step 3 (action · user.registered)
@@ -52,21 +52,21 @@ Given(/^The client calls the protected endpoint and receives 403 with a verifica
     throw new Error("pending UI step: auth.step_up_verification step 0");
 });
 
-// auth.step_up_verification — step 1 (http · GET /auth/api/verification/<str:challenge_id>/)
+// auth.step_up_verification — step 1 (http · GET /auth/api/v1/verification/<str:challenge_id>/)
 When(/^Read the challenge: the scope and the factors filtered down to those actually available to the user; 404 for a foreign\/expired challenge$/, async ({ stapel }) => {
-    // TODO: fill the path parameter(s) of GET /auth/api/verification/{challenge_id}/ from a prior step.
+    // TODO: fill the path parameter(s) of GET /auth/api/v1/verification/{challenge_id}/ from a prior step.
     throw new Error("pending parametrized request: auth.step_up_verification step 1");
 });
 
-// auth.step_up_verification — step 2 (http · POST /auth/api/verification/<str:challenge_id>/initiate/)
+// auth.step_up_verification — step 2 (http · POST /auth/api/v1/verification/<str:challenge_id>/initiate/)
 When(/^Initiate the chosen factor: send a code \(otp_email\/otp_phone\) or get WebAuthn options \(passkey\); totp needs no initiation$/, async ({ stapel }) => {
-    // TODO: fill the path parameter(s) of POST /auth/api/verification/{challenge_id}/initiate/ from a prior step.
+    // TODO: fill the path parameter(s) of POST /auth/api/v1/verification/{challenge_id}/initiate/ from a prior step.
     throw new Error("pending parametrized request: auth.step_up_verification step 2");
 });
 
-// auth.step_up_verification — step 3 (http · POST /auth/api/verification/<str:challenge_id>/complete/)
+// auth.step_up_verification — step 3 (http · POST /auth/api/v1/verification/<str:challenge_id>/complete/)
 When(/^Complete the challenge with the factor proof; success = \{verified, verification_token\} \+ a server-side grant; 400 on a wrong code, 423 when the challenge burned out from brute force$/, async ({ stapel }) => {
-    // TODO: fill the path parameter(s) of POST /auth/api/verification/{challenge_id}/complete/ from a prior step.
+    // TODO: fill the path parameter(s) of POST /auth/api/v1/verification/{challenge_id}/complete/ from a prior step.
     throw new Error("pending parametrized request: auth.step_up_verification step 3");
 });
 
@@ -76,12 +76,12 @@ When(/^Repeat the original request — the grant is already on the server; a sta
     throw new Error("pending UI step: auth.step_up_verification step 4");
 });
 
-// auth.step_up_verification — step 5 (http · GET /auth/api/verification/preferences/)
+// auth.step_up_verification — step 5 (http · GET /auth/api/v1/verification/preferences/)
 When(/^Optional: view your step-up preferences — one \{scope, enabled\} row per scope the user has touched \(enabled=false disables a default_on scope, enabled=true enables an opt_in scope; strict endpoints ignore the preferences\)$/, async ({ stapel }) => {
-    stapel.response = await stapel.client.request("/auth/api/verification/preferences/", { method: "GET" });
+    stapel.response = await stapel.client.request("/auth/api/v1/verification/preferences/", { method: "GET" });
 });
 
-// auth.step_up_verification — step 6 (http · PUT /auth/api/verification/preferences/)
+// auth.step_up_verification — step 6 (http · PUT /auth/api/v1/verification/preferences/)
 Then(/^Optional: change a \{scope, enabled\} preference\. INVARIANT: disabling \(enabled=false\) is itself protected by @requires_verification\(scope=verification\.settings, level=default_on\) — without a fresh grant a 403 with a verification envelope is returned; enabling requires no step-up confirmation\. Both writes reset the policy cache in core$/, async ({ stapel }) => {
-    stapel.response = await stapel.client.request("/auth/api/verification/preferences/", { method: "PUT" });
+    stapel.response = await stapel.client.request("/auth/api/v1/verification/preferences/", { method: "PUT" });
 });
