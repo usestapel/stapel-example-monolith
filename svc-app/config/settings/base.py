@@ -98,5 +98,9 @@ from stapel_core.django.openapi.swagger import get_spectacular_settings
 SPECTACULAR_SETTINGS = get_spectacular_settings(
     title="Stapel Example Monolith API",
     description="Stapel Example Monolith service API",
-    version="1.0.0",
+    # Real version (svc-app/version.txt), not the historical "1.0.0"
+    # placeholder — this app isn't an installed pip distribution itself
+    # (package= would just fall back), so pass the value already resolved
+    # above instead of hardcoding a lie into info.version.
+    version=APP_VERSION_NUMBER,
 )
