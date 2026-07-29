@@ -411,6 +411,20 @@
     "en": "File type not allowed"
   },
   {
+    "code": "error.400.first_login_challenge_invalid",
+    "status": 400,
+    "params": [],
+    "remediation": "reauthenticate",
+    "en": "First-login challenge is invalid or has expired. Sign in again to restart."
+  },
+  {
+    "code": "error.400.grant_invalid",
+    "status": 400,
+    "params": [],
+    "remediation": "retry",
+    "en": "Login grant is invalid, already used, or has expired."
+  },
+  {
     "code": "error.400.invalid_ad_id",
     "status": 400,
     "params": [],
@@ -518,6 +532,13 @@
     "en": "Platform must be one of: ios, android, web."
   },
   {
+    "code": "error.400.invalid_provision_username",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Invalid username for a provisioned account"
+  },
+  {
     "code": "error.400.invalid_redirect_url",
     "status": 400,
     "params": [],
@@ -551,6 +572,13 @@
     "params": [],
     "remediation": "fix_input",
     "en": "Invitation has already been used"
+  },
+  {
+    "code": "error.400.invitation_declined",
+    "status": 400,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "Invitation has been declined"
   },
   {
     "code": "error.400.invitation_expired",
@@ -735,6 +763,13 @@
     "en": "Token is required"
   },
   {
+    "code": "error.400.totp_not_enabled",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "TOTP is not enabled on this account."
+  },
+  {
     "code": "error.400.totp_not_pending",
     "status": 400,
     "params": [],
@@ -742,11 +777,25 @@
     "en": "No pending TOTP setup. Call /totp/setup/ first."
   },
   {
+    "code": "error.400.totp_proof_required",
+    "status": 400,
+    "params": [],
+    "remediation": "verify",
+    "en": "A TOTP already exists on this account. Provide the current code or a backup code to replace it, or use the delayed change flow if you lost your authenticator."
+  },
+  {
     "code": "error.400.unknown_staff_role",
     "status": 400,
     "params": [],
     "remediation": "fix_input",
     "en": "Unknown staff role. Define it in the STAPEL_ACCESS[\"ROLES\"] deploy config first."
+  },
+  {
+    "code": "error.400.username_namespace_invalid",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Invalid namespaced login. Use 'org_slug/username' with exactly one '/' and valid characters on both sides."
   },
   {
     "code": "error.400.validation_error",
@@ -854,11 +903,27 @@
     "en": "User not found"
   },
   {
+    "code": "error.402.entitlement_required",
+    "status": 402,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "The workspace owner's plan does not include this feature"
+  },
+  {
     "code": "error.402.insufficient_credits",
     "status": 402,
     "params": [],
     "remediation": "fix_input",
     "en": "Insufficient credits"
+  },
+  {
+    "code": "error.402.member_limit_reached",
+    "status": 402,
+    "params": [
+      "limit"
+    ],
+    "remediation": "fix_input",
+    "en": "The workspace member limit ({limit}) has been reached"
   },
   {
     "code": "error.402.payment_required",
@@ -896,6 +961,31 @@
     "en": "The last owner cannot be removed; transfer ownership first"
   },
   {
+    "code": "error.403.membership_suspended",
+    "status": 403,
+    "params": [
+      "reason"
+    ],
+    "remediation": "fix_input",
+    "en": "Your membership in this workspace is suspended ({reason})"
+  },
+  {
+    "code": "error.403.mfa_enrollment_required",
+    "status": 403,
+    "params": [],
+    "remediation": "verify",
+    "en": "Two-factor enrollment is required before this account can be used. Set up an authenticator app or a passkey first."
+  },
+  {
+    "code": "error.403.missing_capability",
+    "status": 403,
+    "params": [
+      "capability"
+    ],
+    "remediation": "contact_support",
+    "en": "Your role does not include the {capability} capability in this workspace"
+  },
+  {
     "code": "error.403.mock_otp_admin",
     "status": 403,
     "params": [],
@@ -908,6 +998,13 @@
     "params": [],
     "remediation": "contact_support",
     "en": "Requests from this network are not allowed"
+  },
+  {
+    "code": "error.403.password_change_required",
+    "status": 403,
+    "params": [],
+    "remediation": "reauthenticate",
+    "en": "A password change is required before this account can sign in. Complete the forced password change first."
   },
   {
     "code": "error.403.qr_device_mismatch",
@@ -1130,6 +1227,13 @@
     "en": "Stripe event already processed"
   },
   {
+    "code": "error.409.email_already_registered",
+    "status": 409,
+    "params": [],
+    "remediation": "reauthenticate",
+    "en": "An account with this email already exists — log in instead"
+  },
+  {
     "code": "error.409.email_reserved",
     "status": 409,
     "params": [],
@@ -1337,5 +1441,12 @@
     "params": [],
     "remediation": "retry",
     "en": "Failed to send verification code"
+  },
+  {
+    "code": "error.503.auth_unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "wait_and_retry",
+    "en": "The authentication service is unavailable; try again later"
   }
 ]

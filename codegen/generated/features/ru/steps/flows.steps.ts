@@ -8,6 +8,32 @@ import { test } from "./fixtures";
 
 const { Given, When, Then } = createBdd(test);
 
+// auth.first_login — step 0 (human)
+Given(/^Администратор организации передаёт неймспейсный логин \(org_slug\/username\) и первоначальный пароль вне системы$/, async ({ stapel }) => {
+    // TODO(testid): UI step — attach a testid plan to flow auth.first_login step 0 (system-design §7.20).
+    throw new Error("pending UI step: auth.first_login step 0");
+});
+
+// auth.first_login — step 1 (http · POST /auth/api/v1/password/login/)
+When(/^Вход с выданными учётными данными; пока выставлен флаг первого входа, в ответ приходит FIRST_LOGIN_REQUIRED \{requires, challenge_token\} вместо токенов$/, async ({ stapel }) => {
+    stapel.response = await stapel.client.request("/auth/api/v1/password/login/", { method: "POST" });
+});
+
+// auth.first_login — step 2 (http · POST /auth/api/v1/password/forced-change/)
+When(/^requires=password_change: установка собственного пароля \(проверяется по канону паролей\); возвращается полная сессия — или следующий FIRST_LOGIN_REQUIRED \(requires=mfa_enroll\), если выставлены оба флага\. Отклонённый пароль не расходует челлендж$/, async ({ stapel }) => {
+    stapel.response = await stapel.client.request("/auth/api/v1/password/forced-change/", { method: "POST" });
+});
+
+// auth.first_login — step 3 (http · POST /auth/api/v1/mfa/enroll/exchange/)
+When(/^requires=mfa_enroll: обмен challenge_token на ограниченную enroll-сессию \(JWT-клейм enroll_only, только access-токен — без refresh\); все эндпоинты вне поверхности enrollment отвечают 403 mfa_enrollment_required$/, async ({ stapel }) => {
+    stapel.response = await stapel.client.request("/auth/api/v1/mfa/enroll/exchange/", { method: "POST" });
+});
+
+// auth.first_login — step 4 (http · POST /auth/api/v1/totp/setup/confirm/)
+Then(/^Подключение сильного фактора: подтверждение настройки TOTP \(или завершение регистрации ключа доступа\) снимает флаг, эмитит user\.mfa_enabled и возвращает пару токенов полной сессии в том же ответе$/, async ({ stapel }) => {
+    stapel.response = await stapel.client.request("/auth/api/v1/totp/setup/confirm/", { method: "POST" });
+});
+
 // auth.password_login — step 0 (human)
 Given(/^Пользователь вводит логин и пароль на форме входа$/, async ({ stapel }) => {
     // TODO(testid): UI step — attach a testid plan to flow auth.password_login step 0 (system-design §7.20).
