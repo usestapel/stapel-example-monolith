@@ -13,6 +13,20 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Aggregate inputs (stapel-* libs, installed from PyPI via range pins like
+  # `stapel-auth>=0.7,<0.8`) move on a library RELEASE, not on a local commit
+  # to this repo — push/pull_request alone never fires for that. Every 6h
+  # bounds that blind window to hours instead of the days it silently was
+  # (found only after a contract test had been red since 0.14.2 blaming the
+  # wrong side of the seam). Tighter would just burn Actions minutes between
+  # releases; looser reopens the window this exists to close.
+  #
+  # TEMPORARY SCAFFOLDING (task #129): the real home for this check is the
+  # fleet-wide seam gate (§69, not built yet) — once that lands, this cron
+  # (and the push/pull_request triggers above) should be retired in favor of
+  # it, not left to rot alongside it.
+  schedule:
+    - cron: "0 */6 * * *"
 
 jobs:
   codegen-check:
