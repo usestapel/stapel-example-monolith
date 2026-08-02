@@ -6,7 +6,7 @@
 PYTHON ?= /Users/apple/Projects/stapel/.venv/bin/python
 GEN_DIR := codegen/generated
 
-.PHONY: codegen codegen-check
+.PHONY: codegen codegen-check pin-staleness-check
 
 # Regenerate the committed backend artifacts.
 codegen:
@@ -24,3 +24,11 @@ codegen-check:
 	fi; \
 	rm -rf $$tmp; \
 	echo "codegen artifacts up to date."
+
+# Fleet-release staleness gate: are svc-app/requirements.txt's stapel-* pins
+# still current against PyPI, independent of whether local regen matches the
+# local commit (that question is blind to release drift by construction — see
+# codegen/check_pin_staleness.py's docstring). Needs network access to
+# pypi.org; no venv/install required.
+pin-staleness-check:
+	python3 codegen/check_pin_staleness.py

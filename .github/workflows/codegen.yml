@@ -49,3 +49,23 @@ jobs:
         # hermetic sqlite (config.settings.codegen) and emits the artifacts;
         # the recipe diffs them against the committed files.
         run: make codegen-check PYTHON=python
+
+  pin-staleness:
+    # Separate job, deliberately NOT depending on codegen-check's install step:
+    # this asks PyPI directly whether our pins still cover the fleet's current
+    # releases, which is a different question from "does regen match the
+    # committed aggregate." That self-consistency check is blind to release
+    # drift by construction — it was green for months while every pin here was
+    # several minors behind (see codegen/check_pin_staleness.py's docstring for
+    # the full story). No `pip install` needed for this one; it only reads
+    # requirements.txt and queries pypi.org/pypi/<pkg>/json.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: pin staleness gate (pins vs. PyPI's current releases)
+        run: python3 codegen/check_pin_staleness.py
