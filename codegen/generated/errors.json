@@ -763,6 +763,16 @@
     "en": "Token is required"
   },
   {
+    "code": "error.400.too_many_ids",
+    "status": 400,
+    "params": [
+      "requested",
+      "limit"
+    ],
+    "remediation": "fix_input",
+    "en": "Too many ids: {requested} requested, at most {limit} per batch request"
+  },
+  {
     "code": "error.400.totp_not_enabled",
     "status": 400,
     "params": [],
@@ -1007,6 +1017,13 @@
     "en": "A password change is required before this account can sign in. Complete the forced password change first."
   },
   {
+    "code": "error.403.privileged_account",
+    "status": 403,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "This account holds deployment-wide privileges. Its password cannot be reset from an organization surface."
+  },
+  {
     "code": "error.403.qr_device_mismatch",
     "status": 403,
     "params": [],
@@ -1019,6 +1036,13 @@
     "params": [],
     "remediation": "reauthenticate",
     "en": "This QR code cannot be scanned by an unauthenticated device."
+  },
+  {
+    "code": "error.403.registration_closed",
+    "status": 403,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "New accounts are not open for sign-up here. Ask an administrator to create one for you."
   },
   {
     "code": "error.403.sso_required",
