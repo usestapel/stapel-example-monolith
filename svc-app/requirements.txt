@@ -35,4 +35,11 @@ debugpy>=1.8
 pytest>=7.4
 pytest-django>=4.7
 
+# Codegen tooling (used by codegen/generate.sh -> `python -m stapel_tools.codegen`,
+# invoked by `make codegen` / `make codegen-check`). Same PyPI-range install as
+# everything above — CI's codegen-check job installs only from this file, so if
+# it's missing here the generator can't run there even though it runs fine
+# against a local dev checkout that happens to have it installed already.
+stapel-tools>=0.26,<0.27
+
 # Add service-specific dependencies below.

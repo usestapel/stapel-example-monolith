@@ -15,9 +15,26 @@ codegen:
 # Drift gate: regenerate into a temp dir and diff against the committed
 # artifacts. Non-zero exit (red CI) on any divergence — the whole point of the
 # byte-stable encoding is that a no-op regen is a no-op diff.
+#
+# The generator's own exit code is checked BEFORE the diff, deliberately, and
+# reported with its own distinct message. A generator that fails to run at all
+# (missing stapel_tools, a crash, whatever) leaves the temp dir empty; diffing
+# an empty dir against a populated one looks identical to "everything in the
+# commit is stale" and used to be reported as exactly that ("DRIFT ... run
+# make codegen and commit") — a false accusation against the committed
+# artifacts that, followed literally, would commit an empty regen over a
+# correct aggregate and turn the gate green on nothing. Generator failure and
+# artifact drift are different problems with different fixes; this reports
+# whichever one actually happened.
 codegen-check:
 	@tmp=$$(mktemp -d); \
-	PYTHON=$(PYTHON) codegen/generate.sh $$tmp >/dev/null; \
+	log=$$(mktemp); \
+	if ! PYTHON=$(PYTHON) codegen/generate.sh $$tmp >"$$log" 2>&1; then \
+		echo "GENERATOR FAILED: codegen/generate.sh exited non-zero — the committed artifacts were never compared, this is NOT drift. Output:" >&2; \
+		cat "$$log" >&2; \
+		rm -rf $$tmp "$$log"; exit 1; \
+	fi; \
+	rm -f "$$log"; \
 	if ! diff -ru $(GEN_DIR) $$tmp; then \
 		echo "DRIFT: committed codegen artifacts are stale — run 'make codegen' and commit." >&2; \
 		rm -rf $$tmp; exit 1; \
