@@ -1045,6 +1045,15 @@
     "en": "New accounts are not open for sign-up here. Ask an administrator to create one for you."
   },
   {
+    "code": "error.403.role_exceeds_inviter_rank",
+    "status": 403,
+    "params": [
+      "role"
+    ],
+    "remediation": "fix_input",
+    "en": "You cannot grant a role that outranks your own ({role})"
+  },
+  {
     "code": "error.403.sso_required",
     "status": 403,
     "params": [],
