@@ -14,11 +14,41 @@
     "en": "Amount must be a positive integer"
   },
   {
+    "code": "error.400.avatar_gravatar_hash",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Gravatar avatar must be an email hash (32 or 64 hex characters)"
+  },
+  {
     "code": "error.400.avatar_not_found",
     "status": 400,
     "params": [],
     "remediation": "fix_input",
     "en": "Avatar not found on CDN"
+  },
+  {
+    "code": "error.400.avatar_source_mismatch",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Avatar reference is a CDN reference but avatar_source says otherwise — send avatar_source=\"cdn\" with it, or omit avatar_source and it will be derived from the reference"
+  },
+  {
+    "code": "error.400.avatar_url_host",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Avatar URL host is not allowed here"
+  },
+  {
+    "code": "error.400.avatar_url_scheme",
+    "status": 400,
+    "params": [
+      "schemes"
+    ],
+    "remediation": "fix_input",
+    "en": "Avatar URL must use one of: {schemes}"
   },
   {
     "code": "error.400.bad_request",
@@ -728,6 +758,13 @@
     "en": "QR type is required (session_share or login_request)."
   },
   {
+    "code": "error.400.redirect_url_not_allowed",
+    "status": 400,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "Redirect URL origin is not allowlisted for this deployment"
+  },
+  {
     "code": "error.400.redirect_url_not_configured",
     "status": 400,
     "params": [],
@@ -964,6 +1001,13 @@
     "en": "You do not have access to this workspace"
   },
   {
+    "code": "error.403.gdpr.account_closed",
+    "status": 403,
+    "params": [],
+    "remediation": "retry",
+    "en": "This account is being erased and can no longer be used."
+  },
+  {
     "code": "error.403.last_owner_cannot_be_removed",
     "status": 403,
     "params": [],
@@ -1061,6 +1105,13 @@
     "en": "This account must sign in via SSO. Use your organization SSO link."
   },
   {
+    "code": "error.403.storage_quota_exceeded",
+    "status": 403,
+    "params": [],
+    "remediation": "retry",
+    "en": "Storage quota exceeded"
+  },
+  {
     "code": "error.403.verification_enrollment_required",
     "status": 403,
     "params": [],
@@ -1073,6 +1124,13 @@
     "params": [],
     "remediation": "verify",
     "en": "Additional verification required"
+  },
+  {
+    "code": "error.403.workspace_creation_closed",
+    "status": 403,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "This instance does not allow you to create workspaces"
   },
   {
     "code": "error.404.ad_not_found",
@@ -1358,6 +1416,13 @@
     "en": "This username is already taken."
   },
   {
+    "code": "error.410.gdpr.download_consumed",
+    "status": 410,
+    "params": [],
+    "remediation": "retry",
+    "en": "Download link was already used. Request a new export."
+  },
+  {
     "code": "error.410.gdpr.download_expired",
     "status": 410,
     "params": [],
@@ -1439,6 +1504,24 @@
     "en": "Export is still being prepared."
   },
   {
+    "code": "error.429.invitation_grant_pending",
+    "status": 429,
+    "params": [
+      "retry_after"
+    ],
+    "remediation": "wait_and_retry",
+    "en": "A sign-in link for this invitation is still valid; you can request another one in {retry_after} seconds"
+  },
+  {
+    "code": "error.429.invitation_resend_cooldown",
+    "status": 429,
+    "params": [
+      "retry_after"
+    ],
+    "remediation": "wait_and_retry",
+    "en": "This invitation was emailed recently; you can send it again in {retry_after} seconds"
+  },
+  {
     "code": "error.429.magic_link_rate",
     "status": 429,
     "params": [],
@@ -1481,5 +1564,42 @@
     "params": [],
     "remediation": "wait_and_retry",
     "en": "The authentication service is unavailable; try again later"
+  },
+  {
+    "code": "error.503.billing_unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "wait_and_retry",
+    "en": "The billing service is unavailable; try again later"
+  },
+  {
+    "code": "error.503.gdpr.closure_unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "retry",
+    "en": "Account closure is temporarily unavailable. Please retry later."
+  },
+  {
+    "code": "error.503.image_decoder_unavailable",
+    "status": 503,
+    "params": [
+      "extension"
+    ],
+    "remediation": "contact_support",
+    "en": "This server cannot process {extension} images right now"
+  },
+  {
+    "code": "error.503.profiles_not_configured",
+    "status": 503,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "This deployment has no profiles service configured, so a display name cannot be written here"
+  },
+  {
+    "code": "error.503.profiles_unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "wait_and_retry",
+    "en": "The profiles service is unavailable; try again later"
   }
 ]

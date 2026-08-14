@@ -9,7 +9,7 @@
     "/auth/api/v1/admin-users/": {
       "post": {
         "operationId": "auth_api_v1_admin_users_create",
-        "description": "Create a user account without OTP, bypassing normal registration flow. Requires service API key or admin (staff) credentials.\n\n**Permissions:** `AllowAny`",
+        "description": "Create a user account without OTP, bypassing normal registration flow. Requires service API key or admin (staff) credentials.\n\n**Permissions:** `IsStaffOrServiceAPIKey, DenyEnrollOnly`",
         "tags": [
           "Admin"
         ],
@@ -35,8 +35,7 @@
         "security": [
           {
             "JWTCookieAuth": []
-          },
-          {}
+          }
         ],
         "responses": {
           "201": {
@@ -137,7 +136,7 @@
     "/auth/api/v1/anonymous/": {
       "post": {
         "operationId": "auth_api_v1_anonymous_create",
-        "description": "Create anonymous user\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Create anonymous user. Minting a NEW guest is capped per client per hour (`ANONYMOUS_RATE_LIMIT_PER_HOUR`) — reusing an existing guest session, by `device_id` or by presenting the anonymous session itself, is free.\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Anonymous Auth"
         ],
@@ -184,6 +183,16 @@
             "description": ""
           },
           "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -850,7 +859,7 @@
     "/auth/api/v1/gdpr/schema/": {
       "get": {
         "operationId": "auth_api_v1_gdpr_schema_retrieve",
-        "description": "OpenApi3 schema for this API. Format can be selected via content negotiation.\n\n- YAML: application/vnd.oai.openapi\n- JSON: application/vnd.oai.openapi+json\n\n**Permissions:** `AllowAny`",
+        "description": "OpenApi3 schema for this API. Format can be selected via content negotiation.\n\n- YAML: application/vnd.oai.openapi\n- JSON: application/vnd.oai.openapi+json\n\n**Permissions:** `IsStaffUserForSwagger`",
         "parameters": [
           {
             "in": "query",
@@ -979,8 +988,7 @@
         "security": [
           {
             "JWTCookieAuth": []
-          },
-          {}
+          }
         ],
         "responses": {
           "200": {
@@ -1715,7 +1723,7 @@
     "/auth/api/v1/passkey/": {
       "get": {
         "operationId": "auth_api_v1_passkey_retrieve",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "summary": "List registered passkeys",
         "tags": [
           "Passkeys"
@@ -1742,7 +1750,7 @@
     "/auth/api/v1/passkey/{id}/": {
       "delete": {
         "operationId": "auth_api_v1_passkey_destroy",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "summary": "Remove a passkey",
         "parameters": [
           {
@@ -1772,7 +1780,7 @@
     "/auth/api/v1/passkey/authenticate/begin/": {
       "post": {
         "operationId": "auth_api_v1_passkey_authenticate_begin_create",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "summary": "Begin passkey authentication",
         "tags": [
           "Passkeys"
@@ -1819,7 +1827,7 @@
     "/auth/api/v1/passkey/authenticate/complete/": {
       "post": {
         "operationId": "auth_api_v1_passkey_authenticate_complete_create",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "summary": "Complete passkey authentication and issue session",
         "tags": [
           "Passkeys"
@@ -1860,7 +1868,7 @@
     "/auth/api/v1/passkey/register/begin/": {
       "post": {
         "operationId": "auth_api_v1_passkey_register_begin_create",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "summary": "Begin passkey registration (generate options)",
         "tags": [
           "Passkeys"
@@ -1897,7 +1905,7 @@
     "/auth/api/v1/passkey/register/complete/": {
       "post": {
         "operationId": "auth_api_v1_passkey_register_complete_create",
-        "description": "Verify the WebAuthn attestation and store the credential. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`).\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Verify the WebAuthn attestation and store the credential. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`).\n\n**Permissions:** `IsStaffUserForSwagger`",
         "summary": "Complete passkey registration",
         "tags": [
           "Passkeys"
@@ -4685,7 +4693,7 @@
     "/auth/api/v1/token/": {
       "post": {
         "operationId": "auth_api_v1_token_create",
-        "description": "JWT token obtain view using unified jwt_provider.\n\nAccepts username/email and password, returns access and refresh tokens.\n\n**Permissions:** `AllowAny`",
+        "description": "Deprecated alias of `POST /password/login/`. Mounted only while both `AUTH_LEGACY_TOKEN_LOGIN` and `AUTH_PASSWORD_LOGIN` are on; otherwise 403. Subject to the same lockout and the same TOTP step-up (`PASSWORD_LOGIN_STEP_UP`), so the answer is either a `TokenPair` or a `TOTPChallengeResponse` — pass its `challenge_token` to `POST /totp/challenge/verify/`.\n\n**Permissions:** `AllowAny`",
         "tags": [
           "Token"
         ],
@@ -4720,21 +4728,33 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenPairResponse"
-                },
-                "examples": {
-                  "TokenPairResponse": {
-                    "value": {
-                      "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                      "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                  }
+                  "$ref": "#/components/schemas/LegacyTokenResponse"
                 }
               }
             },
             "description": ""
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4857,7 +4877,7 @@
     "/auth/api/v1/totp/challenge/verify/": {
       "post": {
         "operationId": "auth_api_v1_totp_challenge_verify_create",
-        "description": "Verify TOTP challenge after password/OAuth login when TOTP is enabled. Issues JWT cookies on success.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Verify TOTP challenge after password/OAuth login when TOTP is enabled. Issues JWT cookies on success.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -4907,7 +4927,7 @@
     "/auth/api/v1/totp/change/delayed/cancel/": {
       "post": {
         "operationId": "auth_api_v1_totp_change_delayed_cancel_create",
-        "description": "Cancel a pending delayed TOTP removal.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Cancel a pending delayed TOTP removal.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -4971,7 +4991,7 @@
     "/auth/api/v1/totp/change/delayed/initiate/": {
       "post": {
         "operationId": "auth_api_v1_totp_change_delayed_initiate_create",
-        "description": "Request a delayed TOTP removal — for when the current device is LOST (no code or backup code available), so the instant `/totp/setup/` (replace) or `/totp/disable/` proof-gated paths can't be used. Requires a verified email or phone: it is notified on day 1/7/13 of the cooldown and can cancel the request at any point before it applies. No verified contact on the account -> 400 `no_verified_contact` (a support case, not a self-serve path).\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Request a delayed TOTP removal — for when the current device is LOST (no code or backup code available), so the instant `/totp/setup/` (replace) or `/totp/disable/` proof-gated paths can't be used. Requires a verified email or phone: it is notified on day 1/7/13 of the cooldown and can cancel the request at any point before it applies. No verified contact on the account -> 400 `no_verified_contact` (a support case, not a self-serve path).\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -5037,7 +5057,7 @@
     "/auth/api/v1/totp/change/delayed/status/": {
       "get": {
         "operationId": "auth_api_v1_totp_change_delayed_status_retrieve",
-        "description": "Status of a pending delayed TOTP removal, if any.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Status of a pending delayed TOTP removal, if any.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -5076,7 +5096,7 @@
     "/auth/api/v1/totp/disable/": {
       "post": {
         "operationId": "auth_api_v1_totp_disable_create",
-        "description": "Disable TOTP. Discriminate by `method`: `totp` → 6-digit code, `backup` → backup code, `otp` → SMS code from /totp/disable-otp/request/.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Disable TOTP. Discriminate by `method`: `totp` → 6-digit code, `backup` → backup code, `otp` → SMS code from /totp/disable-otp/request/.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -5124,7 +5144,7 @@
     "/auth/api/v1/totp/disable-otp/request/": {
       "post": {
         "operationId": "auth_api_v1_totp_disable_otp_request_create",
-        "description": "Send a one-time code to the user's verified phone to confirm TOTP disable. Use when the user lost access to their authenticator and has no backup codes.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Send a one-time code to the user's verified phone to confirm TOTP disable. Use when the user lost access to their authenticator and has no backup codes.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -5153,7 +5173,7 @@
     "/auth/api/v1/totp/setup/": {
       "post": {
         "operationId": "auth_api_v1_totp_setup_create",
-        "description": "Start TOTP enrollment. Returns a secret and otpauth URI for QR display. If TOTP is already enabled (replacing an existing device), `code` or `backup_code` proving the CURRENT device is required — otherwise this returns 400 `totp_proof_required`. Lost the current device entirely? Use `/totp/change/delayed/initiate/` instead.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Start TOTP enrollment. Returns a secret and otpauth URI for QR display. If TOTP is already enabled (replacing an existing device), `code` or `backup_code` proving the CURRENT device is required — otherwise this returns 400 `totp_proof_required`. Lost the current device entirely? Use `/totp/change/delayed/initiate/` instead.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -5217,7 +5237,7 @@
     "/auth/api/v1/totp/setup/confirm/": {
       "post": {
         "operationId": "auth_api_v1_totp_setup_confirm_create",
-        "description": "Confirm TOTP setup with the first code. Activates the device and returns one-time backup codes. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`) — the limited session is upgraded on the spot.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "description": "Confirm TOTP setup with the first code. Activates the device and returns one-time backup codes. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`) — the limited session is upgraded on the spot.\n\n**Permissions:** `IsStaffUserForSwagger`",
         "tags": [
           "auth"
         ],
@@ -5273,7 +5293,7 @@
     "/auth/api/v1/user/account/cancel-close": {
       "post": {
         "operationId": "auth_api_v1_user_account_cancel_close_create",
-        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Cancel account closure during grace period",
         "tags": [
           "GDPR"
@@ -5319,7 +5339,7 @@
     "/auth/api/v1/user/account/close": {
       "post": {
         "operationId": "auth_api_v1_user_account_close_create",
-        "description": "Starts a 30-day grace period. Account is deactivated immediately. Can be cancelled by logging in.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Starts a 30-day grace period. The account is deactivated and all of its sessions are revoked immediately. Can be cancelled by logging in during the grace period.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Initiate account closure",
         "tags": [
           "GDPR"
@@ -5349,6 +5369,16 @@
               }
             },
             "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -5356,7 +5386,7 @@
     "/auth/api/v1/user/account/close/status": {
       "get": {
         "operationId": "auth_api_v1_user_account_close_status_retrieve",
-        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Get account closure status",
         "tags": [
           "GDPR"
@@ -5390,77 +5420,10 @@
       }
     },
     "/auth/api/v1/user/data-export/download": {
-      "get": {
-        "operationId": "auth_api_v1_user_data_export_download_retrieve",
-        "description": "Returns the ZIP archive. Link is valid for 7 days after export is ready.\n\n**Permissions:** `IsAuthenticated`",
-        "summary": "Download data export archive",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "token",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Single-use download token bound to the authenticated user.",
-            "required": true
-          }
-        ],
-        "tags": [
-          "GDPR"
-        ],
-        "security": [
-          {
-            "JWTCookieAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/zip": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            },
-            "description": ""
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StapelError"
-                }
-              }
-            },
-            "description": ""
-          },
-          "410": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StapelError"
-                }
-              }
-            },
-            "description": ""
-          },
-          "425": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StapelError"
-                }
-              }
-            },
-            "description": ""
-          }
-        }
-      },
       "post": {
         "operationId": "auth_api_v1_user_data_export_download_create",
-        "description": "Same as GET but the single-use token travels in the request body instead of the URL, so it never lands in access logs or referrers. Bound to the authenticated user.\n\n**Permissions:** `IsAuthenticated`",
-        "summary": "Download data export archive (token in body)",
+        "description": "Spends the single-use token and streams the ZIP archive. The token travels in the request body — never in the URL — and is consumed on the first successful download; the archive is deleted at the same moment. Bound to the authenticated user.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
+        "summary": "Download data export archive",
         "tags": [
           "GDPR"
         ],
@@ -5537,7 +5500,7 @@
     "/auth/api/v1/user/data-export/request": {
       "post": {
         "operationId": "auth_api_v1_user_data_export_request_create",
-        "description": "Initiates an async export job. Archive ready within 48 h. Max once per 30 days.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Initiates an async export job. Archive ready within 48 h. Max once per 30 days.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Request personal data export",
         "tags": [
           "GDPR"
@@ -5574,7 +5537,7 @@
     "/auth/api/v1/user/data-export/status": {
       "get": {
         "operationId": "auth_api_v1_user_data_export_status_retrieve",
-        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Get data export status",
         "tags": [
           "GDPR"
@@ -5599,7 +5562,10 @@
                       "parts_done": 4,
                       "parts_total": 5,
                       "download_available": true,
-                      "expires_at": "2026-07-01T12:00:00Z"
+                      "expires_at": "2026-07-01T12:00:00Z",
+                      "missing_services": [
+                        "recordings"
+                      ]
                     }
                   }
                 }
@@ -8138,7 +8104,7 @@
     "/cdn/api/v1/images/{image_type}/upload/": {
       "post": {
         "operationId": "upload_typed_image",
-        "description": "Upload an image file with a specific type (product, avatar).\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**Available types:** product, avatar\n\n**Maximum file size:** 100MB\n\n\n**Permissions:** `IsNotAnonymousUser`",
+        "description": "Upload an image file with a specific type (product, avatar).\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**Available types:** product, avatar\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_IMAGE_SIZE\"]`, 20MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n\n**Permissions:** `IsNotAnonymousUser`",
         "summary": "Upload an image with specific type",
         "parameters": [
           {
@@ -8306,7 +8272,7 @@
     "/cdn/api/v1/upload/avatar/": {
       "post": {
         "operationId": "upload_avatar",
-        "description": "Upload an avatar image file for processing.\n\n**Same as image upload but sets type to 'avatar'.**\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**Maximum file size:** 100MB\n\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Upload an avatar image file for processing.\n\n**Same as image upload but sets type to 'avatar'.**\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_IMAGE_SIZE\"]`, 20MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n\n**Permissions:** `IsAuthenticated`",
         "summary": "Upload an avatar image",
         "tags": [
           "Images"
@@ -8486,7 +8452,7 @@
     "/cdn/api/v1/upload/image/": {
       "post": {
         "operationId": "upload_image",
-        "description": "Upload an image file for processing.\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing image data (200 OK)\n3. If new file, creates image record and generates variants via background task\n4. Variants are generated in WebP format at multiple resolutions\n\n**Generated variants (all WebP):**\n- 16px, 32px, 64px, 120px - min-side thumbnails\n- 160px, 240px, 480px, 560px, 720px, 1080px - w/h preview branches\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** 100MB\n\n\n**Permissions:** `IsNotAnonymousUser`",
+        "description": "Upload an image file for processing.\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing image data (200 OK)\n3. If new file, creates image record and generates variants via background task\n4. Variants are generated in WebP format at multiple resolutions\n\n**Generated variants (all WebP):**\n- 16px, 32px, 64px, 120px - min-side thumbnails\n- 160px, 240px, 480px, 560px, 720px, 1080px - w/h preview branches\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_IMAGE_SIZE\"]`, 20MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n\n**Permissions:** `IsNotAnonymousUser`",
         "summary": "Upload an image",
         "tags": [
           "Images"
@@ -8600,7 +8566,7 @@
     "/cdn/api/v1/upload/video/": {
       "post": {
         "operationId": "upload_video",
-        "description": "Upload a video file for processing.\n\n**Supported formats:** MP4, WebM, MOV, AVI, MKV\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing video data (200 OK)\n3. If new file, creates video record\n4. Variant generation via FFmpeg (TODO: not yet implemented)\n\n**Planned variants:**\n- 16p, 32p - animated thumbnails\n- 240p, 480p, 720p, 1080p, 2160p - video resolutions\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** 100MB\n\n\n**Permissions:** `IsNotAnonymousUser`",
+        "description": "Upload a video file for processing.\n\n**Supported formats:** MP4, WebM, MOV, AVI, MKV\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing video data (200 OK)\n3. If new file, creates video record\n4. Variant generation via FFmpeg (TODO: not yet implemented)\n\n**Planned variants:**\n- 16p, 32p - animated thumbnails\n- 240p, 480p, 720p, 1080p, 2160p - video resolutions\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_VIDEO_SIZE\"]`, 100MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n\n**Permissions:** `IsNotAnonymousUser`",
         "summary": "Upload a video",
         "tags": [
           "Videos"
@@ -8675,6 +8641,16 @@
             "description": ""
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "413": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9854,7 +9830,7 @@
     "/schema/": {
       "get": {
         "operationId": "schema_retrieve",
-        "description": "OpenApi3 schema for this API. Format can be selected via content negotiation.\n\n- YAML: application/vnd.oai.openapi\n- JSON: application/vnd.oai.openapi+json\n\n**Permissions:** `AllowAny`",
+        "description": "OpenApi3 schema for this API. Format can be selected via content negotiation.\n\n- YAML: application/vnd.oai.openapi\n- JSON: application/vnd.oai.openapi+json\n\n**Permissions:** `IsStaffUserForSwagger`",
         "parameters": [
           {
             "in": "query",
@@ -9983,8 +9959,7 @@
         "security": [
           {
             "JWTCookieAuth": []
-          },
-          {}
+          }
         ],
         "responses": {
           "200": {
@@ -11286,7 +11261,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedTranslationEntryList"
+                  "$ref": "#/components/schemas/PaginatedTranslationEntryPublicList"
                 }
               }
             },
@@ -11323,7 +11298,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TranslationEntry"
+                  "$ref": "#/components/schemas/TranslationEntryPublic"
                 }
               }
             },
@@ -11435,7 +11410,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TranslationEntry"
+                    "$ref": "#/components/schemas/TranslationEntryPublic"
                   }
                 }
               }
@@ -11474,7 +11449,7 @@
     "/workspaces/api/v1/": {
       "get": {
         "operationId": "workspaces_api_v1_retrieve",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Turns an unaskable plan ceiling into 503 for the whole view.\n\nMixed in rather than written as an ``except`` at each call site because\nthe seam is consulted from views AND from inside ``services`` under the\nworkspace lock, and the set of call sites grows: a view that gains a\nmethod later inherits the mapping instead of re-deriving it. The 402\ndenials stay per-call-site — those carry a limit the screen renders.\n\n**Permissions:** `IsAuthenticated`",
         "tags": [
           "Workspaces"
         ],
@@ -11493,7 +11468,9 @@
                 "examples": {
                   "WorkspaceListResponse": {
                     "value": {
-                      "default_workspace_id": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3"
+                      "default_workspace_id": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3",
+                      "preferred_workspace_id": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3",
+                      "can_create_workspace": true
                     }
                   }
                 }
@@ -11505,7 +11482,7 @@
       },
       "post": {
         "operationId": "workspaces_api_v1_create",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Turns an unaskable plan ceiling into 503 for the whole view.\n\nMixed in rather than written as an ``except`` at each call site because\nthe seam is consulted from views AND from inside ``services`` under the\nworkspace lock, and the set of call sites grows: a view that gains a\nmethod later inherits the mapping instead of re-deriving it. The 402\ndenials stay per-call-site — those carry a limit the screen renders.\n\n**Permissions:** `IsAuthenticated`",
         "tags": [
           "Workspaces"
         ],
@@ -11555,7 +11532,8 @@
                       "my_capabilities": [
                         "workspace.view",
                         "members.view"
-                      ]
+                      ],
+                      "owner_display_name": "Victor P."
                     }
                   }
                 }
@@ -11610,7 +11588,8 @@
                       "my_capabilities": [
                         "workspace.view",
                         "members.view"
-                      ]
+                      ],
+                      "owner_display_name": "Victor P."
                     }
                   }
                 }
@@ -11682,7 +11661,8 @@
                       "my_capabilities": [
                         "workspace.view",
                         "members.view"
-                      ]
+                      ],
+                      "owner_display_name": "Victor P."
                     }
                   }
                 }
@@ -11717,6 +11697,104 @@
         "responses": {
           "204": {
             "description": "No response body"
+          }
+        }
+      }
+    },
+    "/workspaces/api/v1/{workspace_id}/audit": {
+      "get": {
+        "operationId": "workspaces_api_v1_audit_list",
+        "description": "``GET <workspace_id>/audit`` — the workspace's membership history.\n\nTHE QUESTION THIS ANSWERS is \"who let this person in, who took them out,\nand when\" — which nothing in this module could answer before. Half the\ntransitions the owner listed emit no comm event at all (an invitation\ncreated, an invitation accepted, an account born from one), and the ones\nthat do emit are fire-and-forget notifications to other services: nothing\nkeeps them, so there was no record to ask.\n\nGATED ON ``members.view``, not on a new capability of its own. An audit of\nwho is in the workspace is the same class of fact as the member list —\nevery role that may see who is in the room may see how they got there. A\nseparate mandate would mean a deployment could grant one without the\nother, which describes no real product.\n\nRead-only by construction: this view has no write method, and the model\nhas no update or delete path.\n\n**Permissions:** `IsAuthenticated`",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "action",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Narrow to one action (models.AuditAction). An unknown value matches nothing rather than being ignored — a filter that silently does not apply is worse than an empty page."
+          },
+          {
+            "name": "anchor",
+            "required": false,
+            "in": "query",
+            "description": "Anchor value to paginate from (exclusive)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "next",
+                "prev",
+                "center"
+              ],
+              "default": "next"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items (default 100, max 500)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Narrow to one person's history (as the SUBJECT)."
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Members"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAuditEventResponseList"
+                },
+                "examples": {
+                  "AuditEventResponse": {
+                    "value": {
+                      "action": "member_removed",
+                      "actor_id": "0192a...",
+                      "subject_id": "0192b...",
+                      "subject_email": "new@acme.test",
+                      "role": "member",
+                      "created_at": "2026-08-13T10:00:00Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -11814,6 +11892,80 @@
                       "status": "pending",
                       "expires_at": "2026-07-31T10:00:00Z",
                       "invited_by_id": "0192a...",
+                      "display_name": "Ada Lovelace",
+                      "revoked_by_id": "0192a...",
+                      "last_sent_at": "2026-07-24T10:00:00Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/workspaces/api/v1/{workspace_id}/invitations/{invitation_id}/name": {
+      "patch": {
+        "operationId": "workspaces_api_v1_invitations_name_partial_update",
+        "description": "``PATCH <ws>/invitations/<id>/name`` — fix a pending invite's name hint.\n\nThe same correction as :class:`MemberNameView`, one step earlier: the\ninvitee has not accepted, so there is no profile of theirs to write and\nthe name lives on the invitation as ``display_name_hint`` — the invite\nmodal's \"Name\" field, which ``accept_invitation`` copies onto the\nmembership at acceptance. Editing it after the fact is why this endpoint\nexists: before #109's invitation surface the only fix for a typo in an\ninvitee's name was to revoke and re-invite, which re-mails the person.\n\nOnly a **pending** invitation is editable, with the same keyed refusals\nrevoke gives for each terminal state (``invitation_revoked`` /\n``already_used`` / ``declined`` / ``expired``): an accepted invitation's\nname is the member's name now — use the member endpoint — and a dead\ninvitation is not a thing to relabel. Unknown and cross-workspace ids\ncollapse into one identical 404 (inherited resolution).\n\nThe value is still held to stapel-profiles' name canon even though the\ncolumn being written is local: this hint becomes a displayed name, and\nthe two endpoints must not disagree about what a name may contain.\n\n**Permissions:** `IsAuthenticated`",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Members"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedDisplayNameUpdateRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedDisplayNameUpdateRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedDisplayNameUpdateRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayNameResponse"
+                },
+                "examples": {
+                  "DisplayNameResponse": {
+                    "value": {
                       "display_name": "Ada Lovelace"
                     }
                   }
@@ -11828,7 +11980,7 @@
     "/workspaces/api/v1/{workspace_id}/invitations/{invitation_id}/resend": {
       "post": {
         "operationId": "workspaces_api_v1_invitations_resend_create",
-        "description": "Send the invitation email again (#109).\n\nAccepts an **expired** invitation on purpose — a dead TTL is the most\ncommon reason to resend — and refuses the three stored terminal states,\nwhich are decisions rather than delivery failures. The token is\nrotated and the TTL restarts, so the fresh letter carries a fresh link\nand any stale copy of the old one stops working.\n\nReviving an expired invitation re-reserves a seat, so the plan ceiling\nis re-checked here exactly as it is on invite: capability first (\"may\nYOU\", 403), then the org's plan (\"may the ORG\", 402). An invitation\nthat is already pending costs no additional seat and is never blocked\nby that check.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Send the invitation email again (#109).\n\nAccepts an **expired** invitation on purpose — a dead TTL is the most\ncommon reason to resend — and refuses the three stored terminal states,\nwhich are decisions rather than delivery failures. The TTL restarts, so\nthe invitee has the full window again from the letter that just went\nout.\n\nReviving an expired invitation re-reserves a seat, so the plan ceiling\nis re-checked here exactly as it is on invite: capability first (\"may\nYOU\", 403), then the org's plan (\"may the ORG\", 402). An invitation\nthat is already pending costs no additional seat and is never blocked\nby that check.\n\nThen the cooldown (\"may we mail this PERSON again yet\", 429). It is\nread here and enforced again inside the service's row lock, the same\ntwo-level shape the state check already has: the view answers a number\nthe admin can read, the lock is what actually makes two simultaneous\npresses send one letter.\n\nThe token is NOT rotated by default from 0.23 — the invitee's existing\nlink keeps working, because the resend goes to the same mailbox that\nlink is already sitting in. See\n``STAPEL_WORKSPACES[\"INVITATION_ROTATE_TOKEN_ON_RESEND\"]``.\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -11873,7 +12025,9 @@
                       "status": "pending",
                       "expires_at": "2026-07-31T10:00:00Z",
                       "invited_by_id": "0192a...",
-                      "display_name": "Ada Lovelace"
+                      "display_name": "Ada Lovelace",
+                      "revoked_by_id": "0192a...",
+                      "last_sent_at": "2026-07-24T10:00:00Z"
                     }
                   }
                 }
@@ -11932,7 +12086,9 @@
                       "status": "pending",
                       "expires_at": "2026-07-31T10:00:00Z",
                       "invited_by_id": "0192a...",
-                      "display_name": "Ada Lovelace"
+                      "display_name": "Ada Lovelace",
+                      "revoked_by_id": "0192a...",
+                      "last_sent_at": "2026-07-24T10:00:00Z"
                     }
                   }
                 }
@@ -12019,7 +12175,8 @@
                     "value": {
                       "id": "0192...",
                       "role": "admin",
-                      "display_name": "Ada Lovelace"
+                      "display_name": "Ada Lovelace",
+                      "mfa_compliant": true
                     }
                   }
                 }
@@ -12093,7 +12250,8 @@
                     "value": {
                       "id": "0192...",
                       "role": "admin",
-                      "display_name": "Ada Lovelace"
+                      "display_name": "Ada Lovelace",
+                      "mfa_compliant": true
                     }
                   }
                 }
@@ -12137,6 +12295,78 @@
         "responses": {
           "204": {
             "description": "No response body"
+          }
+        }
+      }
+    },
+    "/workspaces/api/v1/{workspace_id}/members/{user_id}/name": {
+      "patch": {
+        "operationId": "workspaces_api_v1_members_name_partial_update",
+        "description": "``PATCH <ws>/members/<user_id>/name`` — correct a member's display name.\n\nWrites the CANONICAL name: stapel-profiles' ``Profile.display_name``,\nthrough the named write that module publishes\n(``profiles.set_display_name``, called by\n``services.set_profile_display_name``), which validates against its own\ncanon and publishes ``profile.changed`` so every consumer of that name\nfollows. Topology-independent: the same call runs in-process in a\nmonolith and over the configured route where profiles is its own\ncontainer. Until 0.21.0 it was dotted-path symbol resolution instead,\nand this endpoint simply did not work in a split deployment.\n\nNOT ``WorkspaceMember.display_name_hint``: the hint is a pre-profile\nplaceholder, copied once at creation and dark from the moment a real\nprofile exists (see its docstring in ``models.py``). Writing it would\nproduce a correction the roster shows and nothing else in the product\never does — including, eventually, the roster.\n\nWhere the write cannot be performed the answer is a 503 that names its\nown cause — ``error.503.profiles_not_configured`` when this deployment\nhas neither a provider nor a route (an operator's job, and it will not\nheal on its own), ``error.503.profiles_unavailable`` when the call was\nmade and failed — never a 200 over a write that did not happen.\n\nOnly an owner may rename an owner — the same hardcoded owner protection\nthat role changes, removals and password resets carry. Renaming is not\nescalation, but an admin relabelling the owner of the organization on\nevery screen in the product is close enough to the same act to answer\nthe same way.\n\n**Permissions:** `IsAuthenticated`",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Members"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedDisplayNameUpdateRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedDisplayNameUpdateRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedDisplayNameUpdateRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayNameResponse"
+                },
+                "examples": {
+                  "DisplayNameResponse": {
+                    "value": {
+                      "display_name": "Ada Lovelace"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -12220,7 +12450,7 @@
     "/workspaces/api/v1/{workspace_id}/members/invite": {
       "post": {
         "operationId": "workspaces_api_v1_members_invite_create",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Turns an unaskable plan ceiling into 503 for the whole view.\n\nMixed in rather than written as an ``except`` at each call site because\nthe seam is consulted from views AND from inside ``services`` under the\nworkspace lock, and the set of call sites grows: a view that gains a\nmethod later inherits the mapping instead of re-deriving it. The 402\ndenials stay per-call-site — those carry a limit the screen renders.\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -12277,7 +12507,7 @@
     "/workspaces/api/v1/{workspace_id}/members/provision": {
       "post": {
         "operationId": "workspaces_api_v1_members_provision_create",
-        "description": "Provision an org-created (synthetic) member (org-program spec §C1).\n\nThe org mints its own login/password account: full username is\n``{workspace_slug}/{username_local}`` (namespaced — the slug is\nglobally unique, so orgs cannot collide), the account is created by\n``auth.provision_user`` with the workspace's first-login policy\n(``settings.security.provisioned_user_policy``: forced password change\nor mandatory MFA enrollment) and joins immediately\n(``accepted_at=now``, ``provisioned=True``).\n\nGate stack, in order: HIGH step-up (``@requires_verification``, scope\n``sensitive`` — the same store as admin step-up) → capability\n``members.provision`` (403) → entitlement ``workspaces.provision_user``\n(402; degrades to allow without billing) → optional per-user debit\n(``STAPEL_WORKSPACES[\"PROVISION_USER_CREDITS\"]`` > 0).\n\nCredentials: a synthetic account normally has no email — when the\nrequest omits ``email``, the server-generated password comes back in\nthe response (``generated_password``) exactly once and no letter is\nsent. With ``email``, the ``workspace.provisioned_account`` letter\ncarries the credentials as well. Auth's structured failures pass\nthrough keyed (``error.409.username_taken`` / auth's 400s); auth not\nwired → honest 503, this seam never degrades to allow.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Provision an org-created (synthetic) member (org-program spec §C1).\n\nThe org mints its own login/password account: full username is\n``{workspace_slug}/{username_local}`` (namespaced — the slug is\nglobally unique, so orgs cannot collide), the account is created by\n``auth.provision_user`` with the workspace's first-login policy\n(``settings.security.provisioned_user_policy``: forced password change\nor mandatory MFA enrollment) and joins immediately\n(``accepted_at=now``, ``provisioned=True``).\n\nGate stack, in order: HIGH step-up (``@requires_verification``, scope\n``sensitive`` — the same store as admin step-up) → capability\n``members.provision`` (403) → entitlement ``workspaces.provision_user``\n(402; an unreachable billing answers 503, not allow) → optional\nper-user debit\n(``STAPEL_WORKSPACES[\"PROVISION_USER_CREDITS\"]`` > 0).\n\nCredentials: a synthetic account normally has no email — when the\nrequest omits ``email``, the server-generated password comes back in\nthe response (``generated_password``) exactly once and no letter is\nsent. With ``email``, the ``workspace.provisioned_account`` letter\ncarries the credentials as well. Auth's structured failures pass\nthrough keyed (``error.409.username_taken`` / auth's 400s); auth not\nwired → honest 503, this seam never degrades to allow.\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -12415,7 +12645,8 @@
                     "value": {
                       "id": "0192...",
                       "role": "admin",
-                      "display_name": "Ada Lovelace"
+                      "display_name": "Ada Lovelace",
+                      "mfa_compliant": true
                     }
                   }
                 }
@@ -12524,7 +12755,7 @@
     "/workspaces/api/v1/invitations/{token}/claim": {
       "post": {
         "operationId": "workspaces_api_v1_invitations_claim_create",
-        "description": "Mint a login grant for a not-yet-registered invitee (spec §B2-B3).\n\nAllowAny — the whole point is that no account exists yet. Only valid\nfor ``email_registered == false``: an existing account gets 409 and the\nfrontend switches to login. The grant comes from auth's\n``auth.issue_login_grant`` comm Function (``create_if_missing`` — the\nverified account materializes on exchange); if that Function is not\nwired, the answer is an honest 503 — an invite flow without auth is\nmeaningless, so this seam never degrades to allow. The invitation is\nNOT consumed here: accept stays a separate, deliberate step after\nsetup. Neither the invite token nor the grant token is ever logged.\n\n**Permissions:** `AllowAny`",
+        "description": "Mint a login grant for a not-yet-registered invitee (spec §B2-B3).\n\nAllowAny — the whole point is that no account exists yet. Only valid\nfor ``email_registered == false``: an existing account gets 409 and the\nfrontend switches to login. The grant comes from auth's\n``auth.issue_login_grant`` comm Function (``create_if_missing`` — the\nverified account materializes on exchange); if that Function is not\nwired, the answer is an honest 503 — an invite flow without auth is\nmeaningless, so this seam never degrades to allow. The invitation is\nNOT consumed here: accept stays a separate, deliberate step after\nsetup. Neither the invite token nor the grant token is ever logged.\n\nONE live grant at a time (WORK-03): while the previous grant is inside\nits TTL this answers 429 ``error.429.invitation_grant_pending`` with a\n``Retry-After``, so a leaked invite link cannot be replayed into an\nendless supply of sign-in credentials for the invited mailbox.\n\n**Permissions:** `AllowAny`",
         "parameters": [
           {
             "in": "path",
@@ -12590,7 +12821,7 @@
     "/workspaces/api/v1/invitations/accept": {
       "post": {
         "operationId": "workspaces_api_v1_invitations_accept_create",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Turns an unaskable plan ceiling into 503 for the whole view.\n\nMixed in rather than written as an ``except`` at each call site because\nthe seam is consulted from views AND from inside ``services`` under the\nworkspace lock, and the set of call sites grows: a view that gains a\nmethod later inherits the mapping instead of re-deriving it. The 402\ndenials stay per-call-site — those carry a limit the screen renders.\n\n**Permissions:** `IsAuthenticated`",
         "tags": [
           "Members"
         ],
@@ -12631,7 +12862,92 @@
                     "value": {
                       "id": "0192...",
                       "role": "admin",
-                      "display_name": "Ada Lovelace"
+                      "display_name": "Ada Lovelace",
+                      "mfa_compliant": true
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/workspaces/api/v1/me/preferred-workspace": {
+      "put": {
+        "operationId": "workspaces_api_v1_me_preferred_workspace_update",
+        "description": "``PUT/DELETE me/preferred-workspace`` — the person states where home is.\n\n``STAPEL_WORKSPACES[\"DEFAULT_WORKSPACE_ID\"]`` already describes itself as\n\"a DEFAULT, not a cage: a person still switches spaces, and their\nexplicit choice wins over it\" — and until this endpoint there was nowhere\nfor that choice to be written down. Clients filled the hole by guessing,\nand the guess (``workspaces[0]`` off a recency-ordered list) is #239.\n\nThe choice is stated, never inferred. ``last_accessed_at`` remains what\nit has always been: telemetry written as a side effect of a GET, used to\nsort the list and for nothing else.\n\nDeliberately user-scoped rather than workspace-scoped\n(``.../<workspace_id>/prefer``): there is exactly one answer per person,\nand a route shaped per workspace would invite a second one.\n\n**Permissions:** `IsAuthenticated`",
+        "tags": [
+          "Workspaces"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferredWorkspaceRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferredWorkspaceRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferredWorkspaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferredWorkspaceResponse"
+                },
+                "examples": {
+                  "PreferredWorkspaceResponse": {
+                    "value": {
+                      "preferred_workspace_id": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "workspaces_api_v1_me_preferred_workspace_destroy",
+        "description": "Clear the choice — back to the instance default / the client's chain.\n\nAnswers 200 with an empty id rather than 204: the client's whole job\nhere is to re-resolve, and handing it the new state saves it from\nguessing what \"no content\" left behind. Idempotent.\n\n**Permissions:** `IsAuthenticated`",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferredWorkspaceResponse"
+                },
+                "examples": {
+                  "PreferredWorkspaceResponse": {
+                    "value": {
+                      "preferred_workspace_id": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3"
                     }
                   }
                 }
@@ -12772,6 +13088,76 @@
             "maxLength": 255
           }
         }
+      },
+      "AuditEventResponse": {
+        "type": "object",
+        "description": "One line of a workspace's membership history.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Audit event UUID"
+          },
+          "action": {
+            "type": "string",
+            "description": "What happened — a CLOSED vocabulary (models.AuditAction): invitation_created, invitation_accepted, invitation_revoked, invitation_declined, account_created_by_invitation, member_joined, member_provisioned, member_removed, member_role_changed, member_suspended, member_unsuspended",
+            "example": "member_removed"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Who performed it; null for a transition nobody performed (a policy sweep)",
+            "example": "0192a..."
+          },
+          "actor_display_name": {
+            "type": "string",
+            "description": "Best-effort name of the actor, resolved like every other name in this module (stapel-profiles first); \"\" when unknown"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Whom it happened to; null for an invitation to an address with no account yet",
+            "example": "0192b..."
+          },
+          "subject_display_name": {
+            "type": "string",
+            "description": "Best-effort name of the subject; \"\" when unknown"
+          },
+          "subject_email": {
+            "type": "string",
+            "description": "The invited address, when the row is about an invitation",
+            "example": "new@acme.test"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role involved, when the action carries one",
+            "example": "member"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Action-specific extras — old_role/new_role for a role change, reason for a suspension"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp",
+            "example": "2026-08-13T10:00:00Z"
+          }
+        },
+        "required": [
+          "action",
+          "actor_display_name",
+          "actor_id",
+          "created_at",
+          "id",
+          "metadata",
+          "role",
+          "subject_display_name",
+          "subject_email",
+          "subject_id"
+        ]
       },
       "AuditLogEntry": {
         "type": "object",
@@ -13716,6 +14102,20 @@
           "token"
         ]
       },
+      "DisplayNameResponse": {
+        "type": "object",
+        "description": "What the name is after the write — the stored value, not the request.",
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "description": "The stored name, trimmed and canon-checked. Empty string when the name was cleared",
+            "example": "Ada Lovelace"
+          }
+        },
+        "required": [
+          "display_name"
+        ]
+      },
       "EmailAuthRequest": {
         "type": "object",
         "description": "Serializer for email authentication request (OTP)",
@@ -13827,7 +14227,7 @@
           },
           "download_available": {
             "type": "boolean",
-            "description": "Whether archive is ready to download",
+            "description": "Whether archive is ready to download (single-use token unspent)",
             "example": true
           },
           "expires_at": {
@@ -13835,6 +14235,20 @@
             "nullable": true,
             "description": "ISO datetime when download link expires, null if not ready",
             "example": "2026-07-01T12:00:00Z"
+          },
+          "is_partial": {
+            "type": "boolean",
+            "description": "Whether sections are missing from the archive"
+          },
+          "missing_services": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Sections that could not be included",
+            "example": [
+              "recordings"
+            ]
           }
         },
         "required": [
@@ -14709,11 +15123,13 @@
         "properties": {
           "key": {
             "type": "string",
-            "description": "Translation key"
+            "description": "Translation key",
+            "maxLength": 255
           },
           "image": {
             "type": "string",
-            "description": "Base64-encoded PNG image"
+            "description": "Base64-encoded image (png/jpeg/webp/gif). Rejected unless the decoded bytes are within SCREENSHOT_MAX_BYTES and really are one of those formats.",
+            "maxLength": 6990512
           }
         },
         "required": [
@@ -15683,16 +16099,16 @@
       },
       "InstanceShapeResponse": {
         "type": "object",
-        "description": "Как развёрнут ЭТОТ инстанс — то, что клиенту нужно знать ДО того, как\nон решит, что показать человеку без пространства.\n\nОсь ``landing`` (``STREET_LANDING_MODE``) существовала с 03.08.2026, но\nжила только в окружении бэкенда: наружу не отдавалась ничем, и отличить\nзакрытый контур от публичного облака на клиенте было НЕЧЕМ.\n\nПочему это не косметика. Экран, который видит человек, выброшенный из\nСпейса (или вышедший сам), в этих двух мирах разный по существу:\n\n* ``none`` — закрытый контур: своего пространства у человека нет и\nвзяться неоткуда. Честный экран говорит «вы не участник, попросите\nприглашение» и никуда не зовёт;\n* ``personal`` — публичное облако: у него есть собственное\nпространство, и туда можно вести.\n\nПоказать «создайте встречу» тому, кому инстанс её создать не даст, —\nэто тупик, нарисованный кнопкой.",
+        "description": "How THIS instance is deployed — what the client needs to know before\ndeciding what to show a person with no workspace.\n\nThe ``landing`` axis (``STREET_LANDING_MODE``) has existed since\n2026-08-03 but lived only in backend config, with nothing exposing it —\na client had no way to tell a closed deployment from a public cloud one.\n\nThis matters because the screen shown to someone who is no longer (or\nnever was) a workspace member differs by deployment:\n\n* ``none`` — closed deployment: the person has no workspace and none is\nobtainable. An honest screen says \"you're not a member, ask for an\ninvite\" and offers no path forward;\n* ``personal`` — public cloud: they have their own workspace, and the\nclient can route them there.\n\nOffering \"create a workspace\" to someone the instance will never let\ncreate one is a dead end drawn as a button.",
         "properties": {
           "landing": {
             "type": "string",
-            "description": "С чем приземляется человек «с улицы»",
+            "description": "What a \"street\" (no-invite) arrival lands on",
             "example": "personal"
           },
           "registration_open": {
             "type": "boolean",
-            "description": "Можно ли завести учётку самому",
+            "description": "Whether self-registration is available",
             "example": "True"
           }
         },
@@ -16031,6 +16447,19 @@
             "nullable": true,
             "description": "Name hint typed for this invitee at invite time, if any; null otherwise",
             "example": "Ada Lovelace"
+          },
+          "revoked_by_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "UUID of the admin who withdrew it; null unless revoked, or when that account is gone",
+            "example": "0192a..."
+          },
+          "last_sent_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 time the invitation was last emailed; null if no letter was ever sent",
+            "example": "2026-07-24T10:00:00Z"
           }
         },
         "required": [
@@ -16206,6 +16635,16 @@
           "lang",
           "value",
           "verified"
+        ]
+      },
+      "LegacyTokenResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TokenPairResponse"
+          },
+          {
+            "$ref": "#/components/schemas/TOTPChallengeResponse"
+          }
         ]
       },
       "LinkedOAuthAccountDTO": {
@@ -16388,6 +16827,56 @@
           "totp"
         ]
       },
+      "MFAEnforcementStatus": {
+        "type": "object",
+        "description": "How far the workspace's require_mfa policy has actually got.",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "pending / enforcing / enforced / failed. Only \"enforced\" means every active member's second factor has been confirmed — a settings flag saying require_mfa=true says somebody asked for it, not that it holds",
+            "example": "enforcing"
+          },
+          "attempts": {
+            "type": "integer",
+            "description": "How many sweeps have run since the policy was switched on",
+            "example": 3
+          },
+          "checked_members": {
+            "type": "integer",
+            "description": "Members auth answered about in the last sweep",
+            "example": 12
+          },
+          "noncompliant_members": {
+            "type": "integer",
+            "description": "Of those, members with no strong factor — suspended with reason no_mfa",
+            "example": 2
+          },
+          "unverified_members": {
+            "type": "integer",
+            "description": "Active members whose factor nobody has confirmed yet. They are NOT admitted while the policy is on; this is the number an administrator has to get to zero",
+            "example": 1
+          },
+          "last_attempt_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 time of the last sweep; null before the first",
+            "example": "2026-08-11T10:00:00Z"
+          },
+          "completed_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 time coverage last became complete; null while it is not"
+          },
+          "last_error": {
+            "type": "string",
+            "description": "What auth answered when the last sweep failed, verbatim; empty otherwise. Never credential material",
+            "example": "FunctionCallError: mfa_status timed out"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
       "MagicLinkRequestBody": {
         "type": "object",
         "description": "DRF serializer mixin that validates a ``captcha_token`` field.\n\nAdd this mixin **before** ``serializers.Serializer`` in the MRO so that\n``validate_captcha_token`` runs during DRF field-level validation.\n\nCall ``self._require_captcha_if_configured(attrs)`` from ``validate()``\nto return ``ERR_400_CAPTCHA_REQUIRED`` when captcha is active but the\nclient omitted the token entirely.",
@@ -16441,7 +16930,7 @@
           "display_name": {
             "type": "string",
             "nullable": true,
-            "description": "Name hint for the invitee (this invite's \"Имя\" field), applied to every email in this request. Optional — an invite without one behaves exactly as before. NOT written into stapel-profiles directly (that store is the invitee's own): held on the invitation, copied onto the member at accept time, and shown only until stapel-profiles has a real name for the person",
+            "description": "Name hint for the invitee (this invite's \"Name\" field), applied to every email in this request. Optional — an invite without one behaves exactly as before. NOT written into stapel-profiles directly (that store is the invitee's own): held on the invitation, copied onto the member at accept time, and shown only until stapel-profiles has a real name for the person",
             "example": "Ada Lovelace",
             "maxLength": 35
           },
@@ -16607,6 +17096,12 @@
             "nullable": true,
             "description": "Best-effort display name — a live lookup in stapel-profiles when it is installed and has one, else the name typed at invite/provision time (never both, never invented when neither exists). Null when nobody has one yet",
             "example": "Ada Lovelace"
+          },
+          "mfa_compliant": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether this member was PROVEN to hold a strong second factor — true, false, or null for \"nobody has asked yet\". Under a require_mfa policy the null is what an administrator acts on: those members are not admitted until the answer arrives",
+            "example": true
           }
         },
         "required": [
@@ -16859,6 +17354,45 @@
           "name",
           "price_cents",
           "slug"
+        ]
+      },
+      "PaginatedAuditEventResponseList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEventResponse"
+            }
+          },
+          "next_anchor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Anchor value for next page"
+          },
+          "prev_anchor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Anchor value for previous page"
+          },
+          "has_next": {
+            "type": "boolean",
+            "description": "Whether there are more items after this page"
+          },
+          "has_prev": {
+            "type": "boolean",
+            "description": "Whether there are items before this page"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of items in current page"
+          }
+        },
+        "required": [
+          "items",
+          "has_next",
+          "has_prev",
+          "count"
         ]
       },
       "PaginatedCategoryList": {
@@ -17148,7 +17682,7 @@
           "count"
         ]
       },
-      "PaginatedTranslationEntryList": {
+      "PaginatedTranslationEntryPublicList": {
         "type": "object",
         "required": [
           "pagination",
@@ -17228,7 +17762,7 @@
           "results": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TranslationEntry"
+              "$ref": "#/components/schemas/TranslationEntryPublic"
             }
           }
         }
@@ -17631,6 +18165,19 @@
           },
           "deleted": {
             "type": "boolean"
+          }
+        }
+      },
+      "PatchedDisplayNameUpdateRequest": {
+        "type": "object",
+        "description": "Roster-side name correction (one field, both name-edit endpoints).",
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name to show for this person. Held to stapel-profiles' display-name canon (validate_display_name) — this module never adds a second, differently-strict rule. Blank, whitespace-only, null and a missing key all mean the same thing: clear the name",
+            "example": "Ada Lovelace",
+            "maxLength": 35
           }
         }
       },
@@ -18176,6 +18723,32 @@
         "type": "string",
         "description": "* `year` - year\n* `month` - month\n* `date` - date\n* `datetime` - datetime"
       },
+      "PreferredWorkspaceRequest": {
+        "type": "object",
+        "description": "Which workspace the person is choosing as home.",
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of a workspace the caller actively belongs to",
+            "example": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ]
+      },
+      "PreferredWorkspaceResponse": {
+        "type": "object",
+        "description": "The caller's stated home workspace after the write.",
+        "properties": {
+          "preferred_workspace_id": {
+            "type": "string",
+            "description": "The workspace now recorded as the caller's choice, or \"\" after a DELETE cleared it",
+            "example": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3"
+          }
+        }
+      },
       "ProfileBatchRequest": {
         "type": "object",
         "description": "Look up many public profiles in one request.\n\nSent as a POST body rather than a `?ids=` query string on purpose: a\npeople grid resolves 50-100 ids at once, which is 1.9-3.7 kB of UUIDs —\npast the conservative 2 kB URL ceiling old proxies/WAFs still enforce,\nand close to nginx's default 8 kB request-line+header budget once a JWT\ncookie rides along. A 414 there would read to the user as \"the profile\nservice is down\", which is exactly the failure mode this endpoint exists\nto remove. A body also keeps the roster of who is being looked at out of\naccess logs and Referer headers.\n\nPOST is the transport, not the semantics: this is a read, it changes\nnothing and is safe to repeat. HTTP caching is given up in the trade —\nacceptable, because the caller batches precisely because it keeps its\nown per-id cache and only asks for the ids missing from it.",
@@ -18226,7 +18799,7 @@
       },
       "ProfileFieldManifestEntry": {
         "type": "object",
-        "description": "One active profile field, as the frontend skin needs it to render\nitself without hardcoding field names (docs/pending/profile-fields.md,\n\"Дополнение владельца\" §1 — data-driven skin, tier 1 of the two-tier\nfront-pair answer). GET /profiles/api/v1/field-manifest/ returns a list\nof these for whatever the project's STAPEL_PROFILES[\"FIELDS\"] manifest\n(identity preset + standard_fields + custom_fields) actually selected.",
+        "description": "One active profile field, as the frontend skin needs it to render\nitself without hardcoding field names (docs/pending/profile-fields.md,\n\"Owner Addendum\" §1 — data-driven skin, tier 1 of the two-tier\nfront-pair answer). GET /profiles/api/v1/field-manifest/ returns a list\nof these for whatever the project's STAPEL_PROFILES[\"FIELDS\"] manifest\n(identity preset + standard_fields + custom_fields) actually selected.",
         "properties": {
           "name": {
             "type": "string",
@@ -20142,18 +20715,15 @@
       },
       "TranslationEntry": {
         "type": "object",
-        "description": "Entry serializer with row-based per-language values.\n\nStored values are exposed as a ``values`` list of\n``{language, value, verified}`` rows.",
+        "description": "The full authoring row — privileged callers only.\n\nKept explicit rather than ``'__all__'`` so that adding a model column is\na decision about which surface it lands on, not an automatic publish.",
         "properties": {
           "id": {
             "type": "integer",
             "readOnly": true
           },
-          "values": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TranslationValue"
-            },
-            "readOnly": true
+          "key": {
+            "type": "string",
+            "maxLength": 255
           },
           "revision": {
             "type": "integer",
@@ -20162,9 +20732,12 @@
           "deleted": {
             "type": "boolean"
           },
-          "key": {
-            "type": "string",
-            "maxLength": 255
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TranslationValue"
+            },
+            "readOnly": true
           },
           "comment": {
             "type": "string"
@@ -20196,6 +20769,37 @@
           "llm_translated": {
             "type": "boolean",
             "description": "Whether this translation was generated by LLM"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "revision",
+          "values"
+        ]
+      },
+      "TranslationEntryPublic": {
+        "type": "object",
+        "description": "The entry as an unauthenticated UI-string consumer sees it.\n\nAn allowlist, not an exclusion list: a column added to\n``TranslationEntry`` tomorrow stays off this surface until somebody\nnames it here. The read endpoints are reachable anonymously\n(``ReadOnlyOrSuperUser`` passes every SAFE_METHOD), so everything a\nclient does not need to render a string is authoring metadata that\nwould otherwise be published — developer comments, Figma refs of\nunreleased designs, screenshot URLs, provenance flags.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "revision": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TranslationValue"
+            },
+            "readOnly": true
           }
         },
         "required": [
@@ -20953,6 +21557,16 @@
             "type": "string",
             "description": "Which workspace a client should open when the person has expressed no choice — the instance's STAPEL_WORKSPACES[\"DEFAULT_WORKSPACE_ID\"], echoed back ONLY when the caller actually holds an active membership in it, else \"\". Exists because clients that had to guess guessed badly: meettoday took `workspaces[0]` off a list ordered by last access, so a person in two spaces landed wherever they happened to have been last (measured 2026-08-06 as \"the owner cannot see his own invitations\" — they were in the OTHER space). A default, not a cage: an explicit choice still wins",
             "example": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3"
+          },
+          "preferred_workspace_id": {
+            "type": "string",
+            "description": "The person's OWN stated choice of home workspace (PUT me/preferred-workspace), echoed back ONLY while the membership carrying it is active, else \"\". This is the \"explicit choice\" default_workspace_id documents itself as yielding to, so a client resolves preferred first and the instance default only after it. Never inferred from behaviour — where somebody last clicked is last_accessed_at, which is telemetry, and reading it as a choice is what produced #239",
+            "example": "a8bba7ae-5d2e-43e5-9911-0553e7df50b3"
+          },
+          "can_create_workspace": {
+            "type": "boolean",
+            "description": "Whether THIS caller may found a new workspace on this instance (WORKSPACE_CREATE_POLICY, evaluated by services.can_create_workspace). The ANSWER, not the policy name: resolving \"instance_owner\" client-side would mean re-implementing the instance-owner lookup in every client, and a client that got it wrong would draw a button that 403s — or hide one that should be there. Rides the list because the workspace switcher is the surface that draws \"+ New space\", and it already fetches this",
+            "example": true
           }
         }
       },
@@ -21030,6 +21644,20 @@
               "workspace.view",
               "members.view"
             ]
+          },
+          "owner_display_name": {
+            "type": "string",
+            "description": "The owner's display name, best-effort from stapel-profiles (empty when it has none, is not installed, or is unreachable — never invented). Exists because a workspace NAME stopped identifying one: a person can belong to several spaces all called \"Personal\" — one per company that made them one — and ownership can be handed over, so \"Personal\" answers nothing on its own. Pickers draw it as the second line under the name. Resolved here rather than in each client, which would otherwise each need a profiles batch of its own for a caption",
+            "example": "Victor P."
+          },
+          "mfa_enforcement": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MFAEnforcementStatus"
+              }
+            ],
+            "nullable": true,
+            "description": "State of the security.require_mfa policy — present on the single-workspace responses (GET/PATCH detail) when the policy is on, null otherwise. The settings block says what was asked for; this says what actually holds, so an administrator who switched MFA on is not told \"done\" while half the organization was never checked"
           }
         },
         "required": [
