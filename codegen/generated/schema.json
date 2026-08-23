@@ -229,6 +229,278 @@
         }
       }
     },
+    "/auth/api/v1/dsar": {
+      "get": {
+        "operationId": "auth_api_v1_dsar_list",
+        "description": "Intake and queue for data-subject requests.\n\n``POST`` takes both an authenticated app request and an anonymous one\nfrom a public /privacy form — the form is the channel a regulator\nexpects to exist, and it cannot require a login. The anonymous variant\ngoes through the core's tiered captcha policy\n(``@captcha_protected``); an unconfigured captcha backend leaves the\nform open exactly as before, which is a host's decision to make.\n\n**Permissions:** `AllowAny`",
+        "summary": "List data-protection requests (staff)",
+        "tags": [
+          "GDPR"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          },
+          {}
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DsarStatusDTO"
+                  }
+                },
+                "examples": {
+                  "DsarStatusDTO": {
+                    "value": [
+                      {
+                        "request_id": 5,
+                        "kind": "access",
+                        "channel": "form",
+                        "subject_email": "person@example.com",
+                        "state": "acknowledged",
+                        "received_at": "2026-08-24T09:00:00Z",
+                        "ack_due_at": "2026-08-27T09:00:00Z",
+                        "ack_sent_at": "2026-08-24T09:00:03Z",
+                        "resolve_due_at": "2026-09-23T09:00:00Z",
+                        "erasure_request_id": 17,
+                        "export_request_id": 42,
+                        "note": "matched to account"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "auth_api_v1_dsar_create",
+        "description": "Records the request, sends the acknowledgement that satisfies the three-business-day clock, notifies staff, and — for a request matched to an account — starts the machine that answers it (erasure: the cancellable closure; access/portability: a data export). Anonymous submissions require a captcha token when a captcha backend is configured.\n\n**Permissions:** `AllowAny`",
+        "summary": "Submit a data-protection request",
+        "tags": [
+          "GDPR"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRDsarRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRDsarRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRDsarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          },
+          {}
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DsarStatusDTO"
+                },
+                "examples": {
+                  "DsarStatusDTO": {
+                    "value": {
+                      "request_id": 5,
+                      "kind": "access",
+                      "channel": "form",
+                      "subject_email": "person@example.com",
+                      "state": "acknowledged",
+                      "received_at": "2026-08-24T09:00:00Z",
+                      "ack_due_at": "2026-08-27T09:00:00Z",
+                      "ack_sent_at": "2026-08-24T09:00:03Z",
+                      "resolve_due_at": "2026-09-23T09:00:00Z",
+                      "erasure_request_id": 17,
+                      "export_request_id": 42,
+                      "note": "matched to account"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/auth/api/v1/dsar/{dsar_id}": {
+      "get": {
+        "operationId": "auth_api_v1_dsar_retrieve",
+        "description": "Staff triage of one request: state, note, and matching it to a person.\n\n**Permissions:** `IsAdminUser`",
+        "summary": "Get one data-protection request (staff)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dsar_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "GDPR"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DsarStatusDTO"
+                },
+                "examples": {
+                  "DsarStatusDTO": {
+                    "value": {
+                      "request_id": 5,
+                      "kind": "access",
+                      "channel": "form",
+                      "subject_email": "person@example.com",
+                      "state": "acknowledged",
+                      "received_at": "2026-08-24T09:00:00Z",
+                      "ack_due_at": "2026-08-27T09:00:00Z",
+                      "ack_sent_at": "2026-08-24T09:00:03Z",
+                      "resolve_due_at": "2026-09-23T09:00:00Z",
+                      "erasure_request_id": 17,
+                      "export_request_id": 42,
+                      "note": "matched to account"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "auth_api_v1_dsar_partial_update",
+        "description": "Setting `user_id` on a request that arrived anonymously matches it to an account and wires it to the mechanism that answers it — intake deliberately refuses to do that itself, since turning an unverified email into an erasure is a deletion oracle.\n\n**Permissions:** `IsAdminUser`",
+        "summary": "Update a data-protection request (staff)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dsar_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "GDPR"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedGDPRDsarPatch"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedGDPRDsarPatch"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedGDPRDsarPatch"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DsarStatusDTO"
+                },
+                "examples": {
+                  "DsarStatusDTO": {
+                    "value": {
+                      "request_id": 5,
+                      "kind": "access",
+                      "channel": "form",
+                      "subject_email": "person@example.com",
+                      "state": "acknowledged",
+                      "received_at": "2026-08-24T09:00:00Z",
+                      "ack_due_at": "2026-08-27T09:00:00Z",
+                      "ack_sent_at": "2026-08-24T09:00:03Z",
+                      "resolve_due_at": "2026-09-23T09:00:00Z",
+                      "erasure_request_id": 17,
+                      "export_request_id": 42,
+                      "note": "matched to account"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/auth/api/v1/email/change/delayed/cancel/": {
       "post": {
         "operationId": "auth_api_v1_email_change_delayed_cancel_create",
@@ -856,6 +1128,140 @@
         }
       }
     },
+    "/auth/api/v1/erasures": {
+      "post": {
+        "operationId": "auth_api_v1_erasures_create",
+        "description": "Opens an erasure for a subject the host has already removed from its UI: one receipt slot per data owner that claims this subject type, a purge SLA in `due_at`, and a `gdpr.erasure.requested` action. Authorization is the host's `ERASURE_AUTHORIZER` callable; the default is staff only.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
+        "summary": "Request erasure of one subject",
+        "tags": [
+          "GDPR"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRErasureRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRErasureRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRErasureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasureStatusDTO"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/auth/api/v1/erasures/{request_id}": {
+      "get": {
+        "operationId": "auth_api_v1_erasures_retrieve",
+        "description": "State, receipts, obligations and `fully_erased_by` for one erasure.\n\n**Permissions:** `IsAuthenticated`",
+        "summary": "Get erasure status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "GDPR"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasureStatusDTO"
+                },
+                "examples": {
+                  "ErasureStatusDTO": {
+                    "value": {
+                      "request_id": 17,
+                      "subject_type": "recording",
+                      "subject_key": "9f1c2d3e",
+                      "workspace_id": "ws-42",
+                      "state": "erasing",
+                      "origin": "user",
+                      "requested_at": "2026-08-24T09:00:00Z",
+                      "due_at": "2026-09-23T09:00:00Z",
+                      "fully_erased_by": "2026-10-18T09:00:00Z",
+                      "completed_at": "2026-08-24T09:12:00Z",
+                      "grace_ends_at": "2026-09-23T09:00:00Z",
+                      "unreceipted_owners": [
+                        "media"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/auth/api/v1/gdpr/schema/": {
       "get": {
         "operationId": "auth_api_v1_gdpr_schema_retrieve",
@@ -1316,6 +1722,58 @@
         }
       }
     },
+    "/auth/api/v1/me/erasures": {
+      "get": {
+        "operationId": "auth_api_v1_me_erasures_list",
+        "description": "The caller's own erasures — the \"pending deletion\" list a UI shows.\n\n**Permissions:** `IsAuthenticated`",
+        "summary": "List my erasure requests",
+        "tags": [
+          "GDPR"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ErasureStatusDTO"
+                  }
+                },
+                "examples": {
+                  "ErasureStatusDTO": {
+                    "value": [
+                      {
+                        "request_id": 17,
+                        "subject_type": "recording",
+                        "subject_key": "9f1c2d3e",
+                        "workspace_id": "ws-42",
+                        "state": "erasing",
+                        "origin": "user",
+                        "requested_at": "2026-08-24T09:00:00Z",
+                        "due_at": "2026-09-23T09:00:00Z",
+                        "fully_erased_by": "2026-10-18T09:00:00Z",
+                        "completed_at": "2026-08-24T09:12:00Z",
+                        "grace_ends_at": "2026-09-23T09:00:00Z",
+                        "unreceipted_owners": [
+                          "media"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/auth/api/v1/mfa/enroll/exchange/": {
       "post": {
         "operationId": "auth_api_v1_mfa_enroll_exchange_create",
@@ -1720,10 +2178,55 @@
         }
       }
     },
+    "/auth/api/v1/owners/health": {
+      "get": {
+        "operationId": "auth_api_v1_owners_health_list",
+        "description": "The table behind the `gdpr.W006` boot warning: every declared data owner, when it last answered `gdpr.owner.probe`, and whether the subjects it claims match the inventory.\n\n**Permissions:** `IsAdminUser`",
+        "summary": "Data owner liveness table (staff)",
+        "tags": [
+          "GDPR"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DataOwnerHealthDTO"
+                  }
+                },
+                "examples": {
+                  "DataOwnerHealthDTO": {
+                    "value": [
+                      {
+                        "owner": "workspaces",
+                        "last_alive_at": "2026-08-20T05:00:00Z",
+                        "last_probe_at": "2026-08-24T05:00:00Z",
+                        "declared_subject_types": [
+                          "account",
+                          "workspace"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/auth/api/v1/passkey/": {
       "get": {
         "operationId": "auth_api_v1_passkey_retrieve",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "summary": "List registered passkeys",
         "tags": [
           "Passkeys"
@@ -1750,7 +2253,7 @@
     "/auth/api/v1/passkey/{id}/": {
       "delete": {
         "operationId": "auth_api_v1_passkey_destroy",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "summary": "Remove a passkey",
         "parameters": [
           {
@@ -1780,7 +2283,7 @@
     "/auth/api/v1/passkey/authenticate/begin/": {
       "post": {
         "operationId": "auth_api_v1_passkey_authenticate_begin_create",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "summary": "Begin passkey authentication",
         "tags": [
           "Passkeys"
@@ -1827,7 +2330,7 @@
     "/auth/api/v1/passkey/authenticate/complete/": {
       "post": {
         "operationId": "auth_api_v1_passkey_authenticate_complete_create",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "summary": "Complete passkey authentication and issue session",
         "tags": [
           "Passkeys"
@@ -1868,7 +2371,7 @@
     "/auth/api/v1/passkey/register/begin/": {
       "post": {
         "operationId": "auth_api_v1_passkey_register_begin_create",
-        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "summary": "Begin passkey registration (generate options)",
         "tags": [
           "Passkeys"
@@ -1905,7 +2408,7 @@
     "/auth/api/v1/passkey/register/complete/": {
       "post": {
         "operationId": "auth_api_v1_passkey_register_complete_create",
-        "description": "Verify the WebAuthn attestation and store the credential. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`).\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Verify the WebAuthn attestation and store the credential. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`).\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "summary": "Complete passkey registration",
         "tags": [
           "Passkeys"
@@ -3392,7 +3895,7 @@
     "/auth/api/v1/qr/{key}/scan/": {
       "get": {
         "operationId": "auth_api_v1_qr_scan_retrieve",
-        "description": "Browser endpoint embedded in QR code. Processes the scan and redirects.\n\n**session_share** (scanner has no session) → logs scanner in as the QR owner and redirects to `redirect_url`.\n**session_share** (scanner already logged in as the same user) → marks fulfilled, redirects.\n**session_share** (scanner logged in as a *different* user) → redirects with `?qr_status=account_conflict`.\n**login_request** (scanner logged in) → redirects to `/qr-confirm?key=…` for confirmation.\n**login_request** (scanner not logged in) → redirects to `/sign-in?redirect=<scan_url>`.\n\n\n**Permissions:** `AllowAny`",
+        "description": "Browser endpoint embedded in QR code. Processes the scan and redirects.\n\n**session_share** (scanner has no session) → logs scanner in as the QR owner and redirects to `redirect_url`.\n**session_share** (scanner already logged in as the same user) → marks fulfilled, redirects.\n**session_share** (scanner logged in as a *different* user) → redirects with `?qr_status=account_conflict`.\n**login_request** (scanner logged in) → redirects to `/qr-confirm?key=…` for confirmation.\n**login_request** (scanner not logged in) → redirects to `/login?redirect=<scan_url>`.\n\n\n**Permissions:** `AllowAny`",
         "parameters": [
           {
             "in": "path",
@@ -3432,7 +3935,7 @@
     "/auth/api/v1/qr/{key}/status/": {
       "get": {
         "operationId": "auth_api_v1_qr_status_retrieve",
-        "description": "Poll the status of a QR auth key.\n\n**Statuses:**\n- `pending` — waiting for scan/confirm.\n- `fulfilled` — action completed; for `login_request`, tokens are included so the polling device can authenticate.\n- `expired` — key was not found (TTL elapsed).\n- `rejected` — scanner or confirmer rejected the request; show error UI.\n\n\n**Permissions:** `AllowAny`",
+        "description": "Poll the status of a QR auth key.\n\n**Statuses:**\n- `pending` — waiting for scan/confirm.\n- `fulfilled` — action completed; for `login_request`, tokens are included so the polling device can authenticate, AND the same session is set as httponly JWT cookies on this response (plus the non-httponly `stapel_auth_hint`), so a cookie-mode front end is signed in without touching the body.\n- `expired` — key was not found (TTL elapsed).\n- `rejected` — scanner or confirmer rejected the request; show error UI.\n\n\n**Permissions:** `AllowAny`",
         "parameters": [
           {
             "in": "path",
@@ -4877,7 +5380,7 @@
     "/auth/api/v1/totp/challenge/verify/": {
       "post": {
         "operationId": "auth_api_v1_totp_challenge_verify_create",
-        "description": "Verify TOTP challenge after password/OAuth login when TOTP is enabled. Issues JWT cookies on success.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Verify TOTP challenge after password/OAuth login when TOTP is enabled. Issues JWT cookies on success.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -4927,7 +5430,7 @@
     "/auth/api/v1/totp/change/delayed/cancel/": {
       "post": {
         "operationId": "auth_api_v1_totp_change_delayed_cancel_create",
-        "description": "Cancel a pending delayed TOTP removal.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Cancel a pending delayed TOTP removal.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -4991,7 +5494,7 @@
     "/auth/api/v1/totp/change/delayed/initiate/": {
       "post": {
         "operationId": "auth_api_v1_totp_change_delayed_initiate_create",
-        "description": "Request a delayed TOTP removal — for when the current device is LOST (no code or backup code available), so the instant `/totp/setup/` (replace) or `/totp/disable/` proof-gated paths can't be used. Requires a verified email or phone: it is notified on day 1/7/13 of the cooldown and can cancel the request at any point before it applies. No verified contact on the account -> 400 `no_verified_contact` (a support case, not a self-serve path).\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Request a delayed TOTP removal — for when the current device is LOST (no code or backup code available), so the instant `/totp/setup/` (replace) or `/totp/disable/` proof-gated paths can't be used. Requires a verified email or phone: it is notified on day 1/7/13 of the cooldown and can cancel the request at any point before it applies. No verified contact on the account -> 400 `no_verified_contact` (a support case, not a self-serve path).\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -5057,7 +5560,7 @@
     "/auth/api/v1/totp/change/delayed/status/": {
       "get": {
         "operationId": "auth_api_v1_totp_change_delayed_status_retrieve",
-        "description": "Status of a pending delayed TOTP removal, if any.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Status of a pending delayed TOTP removal, if any.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -5096,7 +5599,7 @@
     "/auth/api/v1/totp/disable/": {
       "post": {
         "operationId": "auth_api_v1_totp_disable_create",
-        "description": "Disable TOTP. Discriminate by `method`: `totp` → 6-digit code, `backup` → backup code, `otp` → SMS code from /totp/disable-otp/request/.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Disable TOTP. Discriminate by `method`: `totp` → 6-digit code, `backup` → backup code, `otp` → SMS code from /totp/disable-otp/request/.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -5144,7 +5647,7 @@
     "/auth/api/v1/totp/disable-otp/request/": {
       "post": {
         "operationId": "auth_api_v1_totp_disable_otp_request_create",
-        "description": "Send a one-time code to the user's verified phone to confirm TOTP disable. Use when the user lost access to their authenticator and has no backup codes.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Send a one-time code to the user's verified phone to confirm TOTP disable. Use when the user lost access to their authenticator and has no backup codes.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -5173,7 +5676,7 @@
     "/auth/api/v1/totp/setup/": {
       "post": {
         "operationId": "auth_api_v1_totp_setup_create",
-        "description": "Start TOTP enrollment. Returns a secret and otpauth URI for QR display. If TOTP is already enabled (replacing an existing device), `code` or `backup_code` proving the CURRENT device is required — otherwise this returns 400 `totp_proof_required`. Lost the current device entirely? Use `/totp/change/delayed/initiate/` instead.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Start TOTP enrollment. Returns a secret and otpauth URI for QR display. If TOTP is already enabled (replacing an existing device), `code` or `backup_code` proving the CURRENT device is required — otherwise this returns 400 `totp_proof_required`. Lost the current device entirely? Use `/totp/change/delayed/initiate/` instead.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -5237,7 +5740,7 @@
     "/auth/api/v1/totp/setup/confirm/": {
       "post": {
         "operationId": "auth_api_v1_totp_setup_confirm_create",
-        "description": "Confirm TOTP setup with the first code. Activates the device and returns one-time backup codes. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`) — the limited session is upgraded on the spot.\n\n**Permissions:** `IsStaffUserForSwagger`",
+        "description": "Confirm TOTP setup with the first code. Activates the device and returns one-time backup codes. When called from a limited enroll-only session (first-login mfa_enroll policy), activating the strong factor clears the enrollment flag and the response additionally carries a full-session token pair (`tokens`) — the limited session is upgraded on the spot.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
         "tags": [
           "auth"
         ],
@@ -8198,6 +8701,16 @@
             },
             "description": ""
           },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
           "500": {
             "content": {
               "application/json": {
@@ -8356,6 +8869,16 @@
             },
             "description": ""
           },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
           "500": {
             "content": {
               "application/json": {
@@ -8452,7 +8975,7 @@
     "/cdn/api/v1/upload/image/": {
       "post": {
         "operationId": "upload_image",
-        "description": "Upload an image file for processing.\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing image data (200 OK)\n3. If new file, creates image record and generates variants via background task\n4. Variants are generated in WebP format at multiple resolutions\n\n**Generated variants (all WebP):**\n- 16px, 32px, 64px, 120px - min-side thumbnails\n- 160px, 240px, 480px, 560px, 720px, 1080px - w/h preview branches\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_IMAGE_SIZE\"]`, 20MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n\n**Permissions:** `IsNotAnonymousUser`",
+        "description": "Upload an image file for processing.\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing image data (200 OK)\n3. If new file, creates image record and generates variants via background task\n4. Variants are generated in WebP format at multiple resolutions\n\n**Generated variants (all WebP):**\n- 16px, 32px, 64px, 120px - min-side thumbnails\n- 160px, 240px, 480px, 560px, 720px, 1080px - w/h preview branches\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_IMAGE_SIZE\"]`, 20MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n**Stored type:** `\"product\"` — one value from `STAPEL_CDN[\"ASSET_TYPES\"]`,\nsame as any type `TypedImageUploadView` accepts. The zero-infra default is\n`(\"avatar\",)` only (see `ASSET_TYPES` in CONFIG.MD), so a deployment that\nnever added `\"product\"` gets a 400 here, exactly as\n`/images/product/upload/` already does for that string.\n\n\n**Permissions:** `IsNotAnonymousUser`",
         "summary": "Upload an image",
         "tags": [
           "Images"
@@ -8541,6 +9064,16 @@
             "description": ""
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "413": {
             "content": {
               "application/json": {
                 "schema": {
@@ -11533,7 +12066,8 @@
                         "workspace.view",
                         "members.view"
                       ],
-                      "owner_display_name": "Victor P."
+                      "owner_display_name": "Victor P.",
+                      "delete_blocked_reason": "error.409.workspace_is_instance_default"
                     }
                   }
                 }
@@ -11589,7 +12123,8 @@
                         "workspace.view",
                         "members.view"
                       ],
-                      "owner_display_name": "Victor P."
+                      "owner_display_name": "Victor P.",
+                      "delete_blocked_reason": "error.409.workspace_is_instance_default"
                     }
                   }
                 }
@@ -11662,7 +12197,8 @@
                         "workspace.view",
                         "members.view"
                       ],
-                      "owner_display_name": "Victor P."
+                      "owner_display_name": "Victor P.",
+                      "delete_blocked_reason": "error.409.workspace_is_instance_default"
                     }
                   }
                 }
@@ -11674,7 +12210,7 @@
       },
       "delete": {
         "operationId": "workspaces_api_v1_destroy",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "End a workspace — the transition itself lives in the service.\n\nThe view's whole job here is authority (owner, and only owner) and\nturning the service's typed refusal back into the keyed 409 the\nfrontend routes on. The write, the event and the audit line are one\nindivisible act in ``services.delete_workspace``, because a second\ndoor into this transition is a second chance to forget the record.\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -12792,7 +13328,7 @@
     "/workspaces/api/v1/invitations/{token}/decline": {
       "post": {
         "operationId": "workspaces_api_v1_invitations_decline_create",
-        "description": "Decline an invitation — the invitee's terminal \"no\" (spec §B2).\n\nAuthenticated + email-match, exactly like accept: only the invited\naccount may resolve the invitation, in either direction. Decline ≠\nrevoke — both states stay distinguishable in the preview ``status``.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Decline an invitation — the invitee's terminal \"no\" (spec §B2).\n\nAllowAny, on the token, exactly like preview and claim — and this is a\nCHANGE from the original authenticated-only rule, made because that rule\nmade the common \"no\" impossible to say.\n\nSaying no used to require an account. The invitee who has none is the\nmajority case on this path (that is why ``claim`` exists at all), so\ndeclining meant first creating the very account the person was declining\nto create: the flow asked for the commitment before the decision, and\nthe refusal left a live, empty account behind it. Verified on the stand.\n\nThe token is the proof, and it is the same proof the module already\naccepts elsewhere for strictly more: ``claim`` takes this token from an\nanonymous caller and mints a LOGIN GRANT for the invited mailbox.\nAnything a token holder could do by declining, they could already do —\nand more — by claiming. What the token cannot do is act as somebody\nelse: a request that arrives WITH a session naming an address must still\nbe the invited address, so a signed-in person cannot resolve an\ninvitation belonging to someone else. That check is unchanged.\n\nA session with no address at all (a guest session — this product mints\nthem at meeting doors) is treated as the anonymous case rather than as a\nmismatched account: it names nobody, so it can neither prove nor\ndisprove ownership, and the token stands on its own. Before this it was\nrefused outright by ``ANONYMOUS_DENIED``, which is how a guest who was\nalso an invitee could not decline at all.\n\nDecline ≠ revoke — both states stay distinguishable in the preview\n``status``. Throttled and token-never-logged like its AllowAny siblings.\n\n**Permissions:** `AllowAny`",
         "parameters": [
           {
             "in": "path",
@@ -12809,7 +13345,8 @@
         "security": [
           {
             "JWTCookieAuth": []
-          }
+          },
+          {}
         ],
         "responses": {
           "204": {
@@ -13406,7 +13943,7 @@
         "description": "Serializer for boolean feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/BoolConfigTypeEnum"
+            "$ref": "#/components/schemas/TypeE3eEnum"
           },
           "trueLabel": {
             "type": "string",
@@ -13418,12 +13955,17 @@
           }
         }
       },
-      "BoolConfigTypeEnum": {
-        "enum": [
-          "bool"
-        ],
-        "type": "string",
-        "description": "* `bool` - bool"
+      "BoolDto": {
+        "type": "object",
+        "description": "Serializer for boolean feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/TypeE3eEnum"
+          },
+          "value": {
+            "type": "boolean"
+          }
+        }
       },
       "BulkUpdateResponse": {
         "type": "object",
@@ -13740,7 +14282,7 @@
         "description": "Serializer for convertible-unit feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/ConvertibleUnitConfigTypeEnum"
+            "$ref": "#/components/schemas/Type104Enum"
           },
           "unitType": {
             "type": "string",
@@ -13773,12 +14315,23 @@
           }
         }
       },
-      "ConvertibleUnitConfigTypeEnum": {
-        "enum": [
-          "convertible_unit"
-        ],
-        "type": "string",
-        "description": "* `convertible_unit` - convertible_unit"
+      "ConvertibleUnitDto": {
+        "type": "object",
+        "description": "Serializer for convertible-unit feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/Type104Enum"
+          },
+          "value": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "CreditDebitRequest": {
         "type": "object",
@@ -13813,6 +14366,92 @@
           "credits",
           "type",
           "user_id"
+        ]
+      },
+      "CreditHoldResponse": {
+        "type": "object",
+        "description": "A reservation: credits already out of the spendable balance.\n\nA hold is a real withdrawal, not an overlay — its credits are gone from\n``balance`` from the moment it is created, and come back only if it is\nreleased or expires.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Hold UUID; also the capture/release handle"
+          },
+          "credits": {
+            "type": "integer",
+            "description": "Credits reserved by this hold"
+          },
+          "type": {
+            "type": "string",
+            "description": "Transaction type the capture will be billed under"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Caller-supplied label carried onto the capture, or null"
+          },
+          "status": {
+            "type": "string",
+            "description": "held, captured, released or expired"
+          },
+          "expires_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 deadline expire_holds sweeps; null = never swept"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601"
+          }
+        },
+        "required": [
+          "created_at",
+          "credits",
+          "description",
+          "expires_at",
+          "id",
+          "status",
+          "type"
+        ]
+      },
+      "CreditLotResponse": {
+        "type": "object",
+        "description": "One live batch of credits — where it came from, when it dies.\n\nA lot only ever shrinks, so ``credits_remaining`` against\n``credits_initial`` is how much of this batch is already gone.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Lot UUID; the same id travels in transaction metadata"
+          },
+          "credits_remaining": {
+            "type": "integer",
+            "description": "Credits still unspent and unreserved"
+          },
+          "credits_initial": {
+            "type": "integer",
+            "description": "Credits the lot was created with"
+          },
+          "source": {
+            "type": "string",
+            "description": "purchase, subscription, grant, adjustment or hold_release"
+          },
+          "expires_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 deadline; null = these credits never expire"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601"
+          }
+        },
+        "required": [
+          "created_at",
+          "credits_initial",
+          "credits_remaining",
+          "expires_at",
+          "id",
+          "source"
         ]
       },
       "CreditOperationResponse": {
@@ -13866,12 +14505,63 @@
           "total_entries"
         ]
       },
+      "DataOwnerHealthDTO": {
+        "type": "object",
+        "description": "Whether a declared data owner is answering probes.",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "description": "Data owner name",
+            "example": "workspaces"
+          },
+          "alive": {
+            "type": "boolean",
+            "description": "Whether it answered within OWNER_ALIVE_MAX_AGE_HOURS"
+          },
+          "last_alive_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO datetime of its last answer, null if it never answered",
+            "example": "2026-08-20T05:00:00Z"
+          },
+          "last_probe_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO datetime it was last asked",
+            "example": "2026-08-24T05:00:00Z"
+          },
+          "declared_subject_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Subjects the inventory says it holds",
+            "example": [
+              "account",
+              "workspace"
+            ]
+          },
+          "answered_subject_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Subjects it says it holds"
+          }
+        },
+        "required": [
+          "alive",
+          "last_alive_at",
+          "last_probe_at",
+          "owner"
+        ]
+      },
       "DateConfig": {
         "type": "object",
         "description": "Serializer for date feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/DateConfigTypeEnum"
+            "$ref": "#/components/schemas/Type37eEnum"
           },
           "precision": {
             "$ref": "#/components/schemas/PrecisionEnum"
@@ -13909,12 +14599,18 @@
           }
         }
       },
-      "DateConfigTypeEnum": {
-        "enum": [
-          "date"
-        ],
-        "type": "string",
-        "description": "* `date` - date"
+      "DateDto": {
+        "type": "object",
+        "description": "Serializer for date feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/Type37eEnum"
+          },
+          "value": {
+            "type": "integer",
+            "nullable": true
+          }
+        }
       },
       "DelayedCancelResponse": {
         "type": "object",
@@ -14116,6 +14812,86 @@
           "display_name"
         ]
       },
+      "DsarStatusDTO": {
+        "type": "object",
+        "description": "A data-subject request and the statutory clocks on it.",
+        "properties": {
+          "request_id": {
+            "type": "integer",
+            "description": "DSAR ID, quoted back to the subject as their reference",
+            "example": 5
+          },
+          "kind": {
+            "type": "string",
+            "description": "One of access, erasure, rectification, portability",
+            "example": "access"
+          },
+          "channel": {
+            "type": "string",
+            "description": "How it arrived — app, form or email",
+            "example": "form"
+          },
+          "subject_email": {
+            "type": "string",
+            "description": "Email the request was made from",
+            "example": "person@example.com"
+          },
+          "state": {
+            "type": "string",
+            "description": "One of received, acknowledged, in_progress, resolved, rejected",
+            "example": "acknowledged"
+          },
+          "received_at": {
+            "type": "string",
+            "description": "ISO datetime the request arrived",
+            "example": "2026-08-24T09:00:00Z"
+          },
+          "ack_due_at": {
+            "type": "string",
+            "description": "ISO datetime the acknowledgement is due (3 business days)",
+            "example": "2026-08-27T09:00:00Z"
+          },
+          "ack_sent_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO datetime the acknowledgement went out, null if not yet",
+            "example": "2026-08-24T09:00:03Z"
+          },
+          "resolve_due_at": {
+            "type": "string",
+            "description": "ISO datetime resolution is due (30 days)",
+            "example": "2026-09-23T09:00:00Z"
+          },
+          "erasure_request_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Linked erasure, null when none was started",
+            "example": 17
+          },
+          "export_request_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Linked data export, null when none was started",
+            "example": 42
+          },
+          "note": {
+            "type": "string",
+            "description": "Staff notes and automation outcomes",
+            "example": "matched to account"
+          }
+        },
+        "required": [
+          "ack_due_at",
+          "ack_sent_at",
+          "channel",
+          "kind",
+          "received_at",
+          "request_id",
+          "resolve_due_at",
+          "state",
+          "subject_email"
+        ]
+      },
       "EmailAuthRequest": {
         "type": "object",
         "description": "Serializer for email authentication request (OTP)",
@@ -14154,6 +14930,145 @@
           "email"
         ]
       },
+      "ErasurePartDTO": {
+        "type": "object",
+        "description": "One data owner's receipt for an erasure.",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "description": "Data owner name",
+            "example": "recordings"
+          },
+          "state": {
+            "type": "string",
+            "description": "One of pending, done, failed, timeout",
+            "example": "done"
+          },
+          "receipt_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO datetime the owner confirmed, null while pending",
+            "example": "2026-08-24T09:12:00Z"
+          },
+          "receipt_id": {
+            "type": "string",
+            "description": "The owner's own durable proof of erasure",
+            "example": "recordings:job-8812"
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "What the owner removed, by its own count",
+            "example": {
+              "recordings": 3
+            }
+          }
+        },
+        "required": [
+          "owner",
+          "receipt_at",
+          "state"
+        ]
+      },
+      "ErasureStatusDTO": {
+        "type": "object",
+        "description": "State of an erasure request, with everything it is waiting on.",
+        "properties": {
+          "request_id": {
+            "type": "integer",
+            "description": "Erasure request ID",
+            "example": 17
+          },
+          "subject_type": {
+            "type": "string",
+            "description": "What is being erased",
+            "example": "recording"
+          },
+          "subject_key": {
+            "type": "string",
+            "description": "The host's id for that subject",
+            "example": "9f1c2d3e"
+          },
+          "workspace_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Workspace the subject belongs to, null when not partitioned",
+            "example": "ws-42"
+          },
+          "state": {
+            "type": "string",
+            "description": "One of queued, erasing, deleted, timeout",
+            "example": "erasing"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Why this erasure exists",
+            "example": "user"
+          },
+          "requested_at": {
+            "type": "string",
+            "description": "ISO datetime the erasure was opened",
+            "example": "2026-08-24T09:00:00Z"
+          },
+          "due_at": {
+            "type": "string",
+            "description": "ISO datetime our own purge SLA expires",
+            "example": "2026-09-23T09:00:00Z"
+          },
+          "fully_erased_by": {
+            "type": "string",
+            "description": "ISO datetime every subprocessor window has also closed",
+            "example": "2026-10-18T09:00:00Z"
+          },
+          "completed_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO datetime the erasure was certified, null while open",
+            "example": "2026-08-24T09:12:00Z"
+          },
+          "grace_ends_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO datetime a cancellable grace ends (accounts only)",
+            "example": "2026-09-23T09:00:00Z"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErasurePartDTO"
+            },
+            "description": "Per-owner receipts"
+          },
+          "obligations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubprocessorObligationDTO"
+            },
+            "description": "Per-processor deletion windows"
+          },
+          "unreceipted_owners": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Owners still blocking completion",
+            "example": [
+              "media"
+            ]
+          }
+        },
+        "required": [
+          "due_at",
+          "fully_erased_by",
+          "origin",
+          "request_id",
+          "requested_at",
+          "state",
+          "subject_key",
+          "subject_type",
+          "workspace_id"
+        ]
+      },
       "ErrorEnum": {
         "enum": [
           "below_minimum",
@@ -14174,6 +15089,24 @@
         ],
         "type": "string",
         "description": "* `below_minimum` - below_minimum\n* `above_maximum` - above_maximum\n* `not_in_options` - not_in_options\n* `invalid_type` - invalid_type\n* `invalid_format` - invalid_format\n* `mandatory_missing` - mandatory_missing\n* `duplicate_slug` - duplicate_slug\n* `unknown_feature_type` - unknown_feature_type\n* `not_allowed` - not_allowed\n* `unknown_feature` - unknown_feature\n* `description_too_short` - description_too_short\n* `description_too_long` - description_too_long\n* `invalid_config` - invalid_config\n* `min_greater_than_max` - min_greater_than_max\n* `empty_options` - empty_options"
+      },
+      "ExpiringCreditsResponse": {
+        "type": "object",
+        "description": "The wallet's nearest credit deadline.",
+        "properties": {
+          "credits": {
+            "type": "integer",
+            "description": "Credits in the earliest-expiring live lot"
+          },
+          "expires_at": {
+            "type": "string",
+            "description": "ISO 8601 — when they die"
+          }
+        },
+        "required": [
+          "credits",
+          "expires_at"
+        ]
       },
       "ExportRequestDTO": {
         "type": "object",
@@ -14359,7 +15292,9 @@
           "id": {
             "type": "integer"
           },
-          "config": {},
+          "config": {
+            "$ref": "#/components/schemas/FeatureConfig"
+          },
           "revision": {
             "type": "integer",
             "readOnly": true
@@ -14592,7 +15527,16 @@
         "discriminator": {
           "propertyName": "type",
           "mapping": {
-            "null": "#/components/schemas/ConvertibleUnitConfig"
+            "int": "#/components/schemas/IntConfig",
+            "float": "#/components/schemas/FloatConfig",
+            "string": "#/components/schemas/StringConfig",
+            "bool": "#/components/schemas/BoolConfig",
+            "hex_color": "#/components/schemas/HexColorConfig",
+            "select": "#/components/schemas/SelectConfig",
+            "date": "#/components/schemas/DateConfig",
+            "header": "#/components/schemas/HeaderConfig",
+            "hierarchical_select": "#/components/schemas/HierarchicalSelectConfig",
+            "convertible_unit": "#/components/schemas/ConvertibleUnitConfig"
           }
         }
       },
@@ -14600,8 +15544,11 @@
         "type": "object",
         "properties": {
           "config": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeatureConfig"
+              }
+            ],
             "description": "New config after conversion"
           },
           "propagate": {
@@ -14759,6 +15706,55 @@
           "tn_siblings_count",
           "tn_siblings_pks"
         ]
+      },
+      "FeatureDto": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/IntDto"
+          },
+          {
+            "$ref": "#/components/schemas/FloatDto"
+          },
+          {
+            "$ref": "#/components/schemas/StringDto"
+          },
+          {
+            "$ref": "#/components/schemas/BoolDto"
+          },
+          {
+            "$ref": "#/components/schemas/HexColorDto"
+          },
+          {
+            "$ref": "#/components/schemas/SelectDto"
+          },
+          {
+            "$ref": "#/components/schemas/DateDto"
+          },
+          {
+            "$ref": "#/components/schemas/HeaderDto"
+          },
+          {
+            "$ref": "#/components/schemas/HierarchicalSelectDto"
+          },
+          {
+            "$ref": "#/components/schemas/ConvertibleUnitDto"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "int": "#/components/schemas/IntDto",
+            "float": "#/components/schemas/FloatDto",
+            "string": "#/components/schemas/StringDto",
+            "bool": "#/components/schemas/BoolDto",
+            "hex_color": "#/components/schemas/HexColorDto",
+            "select": "#/components/schemas/SelectDto",
+            "date": "#/components/schemas/DateDto",
+            "header": "#/components/schemas/HeaderDto",
+            "hierarchical_select": "#/components/schemas/HierarchicalSelectDto",
+            "convertible_unit": "#/components/schemas/ConvertibleUnitDto"
+          }
+        }
       },
       "FeatureEditorApply": {
         "type": "object",
@@ -15003,6 +15999,13 @@
           "params": {
             "type": "object",
             "additionalProperties": {},
+            "nullable": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           }
         },
@@ -15431,6 +16434,17 @@
         "description": "File existence check result.",
         "properties": {
           "file": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              },
+              {
+                "$ref": "#/components/schemas/Video"
+              },
+              {
+                "$ref": "#/components/schemas/FileModel"
+              }
+            ],
             "nullable": true,
             "description": "File object if found, null otherwise"
           },
@@ -15494,6 +16508,10 @@
             "description": "URL to original uploaded file"
           },
           "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "description": "List of references: service/entity_type/entity_id"
           },
           "uploaded_by": {
@@ -15620,7 +16638,7 @@
         "description": "Serializer for float feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/FloatConfigTypeEnum"
+            "$ref": "#/components/schemas/TypeD7cEnum"
           },
           "min": {
             "type": "number",
@@ -15664,12 +16682,18 @@
           }
         }
       },
-      "FloatConfigTypeEnum": {
-        "enum": [
-          "float"
-        ],
-        "type": "string",
-        "description": "* `float` - float"
+      "FloatDto": {
+        "type": "object",
+        "description": "Serializer for float feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/TypeD7cEnum"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          }
+        }
       },
       "FollowersResponse": {
         "type": "object",
@@ -15752,31 +16776,87 @@
           "token"
         ]
       },
+      "GDPRDsarRequest": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KindEnum"
+              }
+            ],
+            "description": "access, erasure, rectification or portability.\n\n* `access` - access\n* `erasure` - erasure\n* `rectification` - rectification\n* `portability` - portability"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Required for anonymous submissions; ignored when authenticated."
+          },
+          "note": {
+            "type": "string",
+            "description": "What the subject is asking for, in their words."
+          },
+          "captcha_token": {
+            "type": "string",
+            "description": "Captcha token for anonymous submissions."
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "GDPRErasureRequest": {
+        "type": "object",
+        "properties": {
+          "subject_type": {
+            "type": "string",
+            "description": "One of STAPEL_GDPR[\"SUBJECT_TYPES\"], e.g. \"recording\"."
+          },
+          "subject_key": {
+            "type": "string",
+            "description": "The host's own id for the subject."
+          },
+          "workspace_id": {
+            "type": "string",
+            "description": "Workspace the subject belongs to, for owners that partition by it."
+          }
+        },
+        "required": [
+          "subject_key",
+          "subject_type"
+        ]
+      },
       "HeaderConfig": {
         "type": "object",
         "description": "Serializer for header feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/HeaderConfigTypeEnum"
+            "$ref": "#/components/schemas/Type3feEnum"
           },
           "style": {
             "$ref": "#/components/schemas/StyleEnum"
           }
         }
       },
-      "HeaderConfigTypeEnum": {
-        "enum": [
-          "header"
-        ],
-        "type": "string",
-        "description": "* `header` - header"
+      "HeaderDto": {
+        "type": "object",
+        "description": "Serializer for header feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/Type3feEnum"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "HexColorConfig": {
         "type": "object",
         "description": "Serializer for hex color feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/HexColorConfigTypeEnum"
+            "$ref": "#/components/schemas/Type515Enum"
           },
           "options": {
             "type": "array",
@@ -15789,15 +16869,45 @@
           }
         }
       },
-      "HexColorConfigTypeEnum": {
-        "enum": [
-          "hex_color"
-        ],
-        "type": "string",
-        "description": "* `hex_color` - hex_color"
+      "HexColorDto": {
+        "type": "object",
+        "description": "Serializer for hex color feature DTO.",
+        "properties": {
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HexColorValue"
+              }
+            ],
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/Type515Enum"
+          }
+        }
       },
       "HexColorOption": {
         "type": "object",
+        "properties": {
+          "simple": {
+            "type": "string"
+          },
+          "hex": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "simple"
+        ]
+      },
+      "HexColorValue": {
+        "type": "object",
+        "description": "Serializer for hex color value.",
         "properties": {
           "simple": {
             "type": "string"
@@ -15849,7 +16959,7 @@
         "description": "Serializer for hierarchical select feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/HierarchicalSelectConfigTypeEnum"
+            "$ref": "#/components/schemas/Type5beEnum"
           },
           "options": {
             "type": "array",
@@ -15872,12 +16982,20 @@
           }
         }
       },
-      "HierarchicalSelectConfigTypeEnum": {
-        "enum": [
-          "hierarchical_select"
-        ],
-        "type": "string",
-        "description": "* `hierarchical_select` - hierarchical_select"
+      "HierarchicalSelectDto": {
+        "type": "object",
+        "description": "Serializer for hierarchical select feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/Type5beEnum"
+          },
+          "value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "Image": {
         "type": "object",
@@ -16007,6 +17125,39 @@
             "description": "2160px 4K (WebP)"
           },
           "variants_meta": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tier": {
+                  "type": "integer"
+                },
+                "branch": {
+                  "type": "string",
+                  "enum": [
+                    "w",
+                    "h"
+                  ],
+                  "nullable": true,
+                  "description": "None for thumbnail-class (min-side) tiers."
+                },
+                "url": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "integer"
+                },
+                "height": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "tier",
+                "url",
+                "width",
+                "height"
+              ]
+            },
             "readOnly": true,
             "description": "Generated variants with geometry: [{tier, branch, url, width, height}]"
           },
@@ -16250,7 +17401,7 @@
         "description": "Serializer for integer feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/IntConfigTypeEnum"
+            "$ref": "#/components/schemas/TypeC1bEnum"
           },
           "min": {
             "type": "integer",
@@ -16291,12 +17442,17 @@
           }
         }
       },
-      "IntConfigTypeEnum": {
-        "enum": [
-          "int"
-        ],
-        "type": "string",
-        "description": "* `int` - int"
+      "IntDto": {
+        "type": "object",
+        "description": "Serializer for integer feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/TypeC1bEnum"
+          },
+          "value": {
+            "type": "integer"
+          }
+        }
       },
       "InternalPersonalWorkspaceResponse": {
         "type": "object",
@@ -16474,6 +17630,16 @@
           "status",
           "workspace_id"
         ]
+      },
+      "KindEnum": {
+        "enum": [
+          "access",
+          "erasure",
+          "rectification",
+          "portability"
+        ],
+        "type": "string",
+        "description": "* `access` - access\n* `erasure` - erasure\n* `rectification` - rectification\n* `portability` - portability"
       },
       "LLMHelpRequest": {
         "type": "object",
@@ -18310,6 +19476,20 @@
           }
         }
       },
+      "PatchedGDPRDsarPatch": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/StateEnum"
+          },
+          "note": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          }
+        }
+      },
       "PatchedMemberUpdateRequest": {
         "type": "object",
         "description": "MemberUpdateRequest(role: str)",
@@ -19831,7 +21011,7 @@
         "description": "Serializer for select feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/SelectConfigTypeEnum"
+            "$ref": "#/components/schemas/Type63eEnum"
           },
           "options": {
             "type": "array",
@@ -19857,12 +21037,20 @@
           }
         }
       },
-      "SelectConfigTypeEnum": {
-        "enum": [
-          "select"
-        ],
-        "type": "string",
-        "description": "* `select` - select"
+      "SelectDto": {
+        "type": "object",
+        "description": "Serializer for select feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/Type63eEnum"
+          },
+          "value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "SelectOption": {
         "type": "object",
@@ -20197,12 +21385,23 @@
           "width"
         ]
       },
+      "StateEnum": {
+        "enum": [
+          "received",
+          "acknowledged",
+          "in_progress",
+          "resolved",
+          "rejected"
+        ],
+        "type": "string",
+        "description": "* `received` - received\n* `acknowledged` - acknowledged\n* `in_progress` - in_progress\n* `resolved` - resolved\n* `rejected` - rejected"
+      },
       "StringConfig": {
         "type": "object",
         "description": "Serializer for string feature configuration.",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/StringConfigTypeEnum"
+            "$ref": "#/components/schemas/Type839Enum"
           },
           "minLength": {
             "type": "integer",
@@ -20240,15 +21439,23 @@
           },
           "translatable_options": {
             "type": "boolean"
+          },
+          "multiline": {
+            "type": "boolean"
           }
         }
       },
-      "StringConfigTypeEnum": {
-        "enum": [
-          "string"
-        ],
-        "type": "string",
-        "description": "* `string` - string"
+      "StringDto": {
+        "type": "object",
+        "description": "Serializer for string feature DTO.",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/Type839Enum"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
       },
       "StyleEnum": {
         "enum": [
@@ -20257,6 +21464,38 @@
         ],
         "type": "string",
         "description": "* `l` - l\n* `m` - m"
+      },
+      "SubprocessorObligationDTO": {
+        "type": "object",
+        "description": "One processor's contractual deletion window for an erasure.",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Processor name",
+            "example": "openai"
+          },
+          "window_days": {
+            "type": "integer",
+            "description": "Contractual window in days from our own completion",
+            "example": 30
+          },
+          "due_at": {
+            "type": "string",
+            "description": "ISO datetime the window closes",
+            "example": "2026-09-23T09:12:00Z"
+          },
+          "state": {
+            "type": "string",
+            "description": "One of pending, confirmed, overdue",
+            "example": "pending"
+          }
+        },
+        "required": [
+          "due_at",
+          "provider",
+          "state",
+          "window_days"
+        ]
       },
       "SubscriptionResponse": {
         "type": "object",
@@ -20887,6 +22126,76 @@
           "verified"
         ]
       },
+      "Type104Enum": {
+        "enum": [
+          "convertible_unit"
+        ],
+        "type": "string",
+        "description": "* `convertible_unit` - convertible_unit"
+      },
+      "Type37eEnum": {
+        "enum": [
+          "date"
+        ],
+        "type": "string",
+        "description": "* `date` - date"
+      },
+      "Type3feEnum": {
+        "enum": [
+          "header"
+        ],
+        "type": "string",
+        "description": "* `header` - header"
+      },
+      "Type515Enum": {
+        "enum": [
+          "hex_color"
+        ],
+        "type": "string",
+        "description": "* `hex_color` - hex_color"
+      },
+      "Type5beEnum": {
+        "enum": [
+          "hierarchical_select"
+        ],
+        "type": "string",
+        "description": "* `hierarchical_select` - hierarchical_select"
+      },
+      "Type63eEnum": {
+        "enum": [
+          "select"
+        ],
+        "type": "string",
+        "description": "* `select` - select"
+      },
+      "Type839Enum": {
+        "enum": [
+          "string"
+        ],
+        "type": "string",
+        "description": "* `string` - string"
+      },
+      "TypeC1bEnum": {
+        "enum": [
+          "int"
+        ],
+        "type": "string",
+        "description": "* `int` - int"
+      },
+      "TypeD7cEnum": {
+        "enum": [
+          "float"
+        ],
+        "type": "string",
+        "description": "* `float` - float"
+      },
+      "TypeE3eEnum": {
+        "enum": [
+          "bool"
+        ],
+        "type": "string",
+        "description": "* `bool` - bool"
+      },
       "UiStyleEnum": {
         "enum": [
           "dropdown",
@@ -21043,6 +22352,10 @@
         "description": "Request serializer for validate_dto endpoint.",
         "properties": {
           "features": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FeatureDto"
+            },
             "description": "Features DTO object keyed by feature slug: {slug: {type, value, ...}}"
           }
         },
@@ -21474,7 +22787,7 @@
           },
           "balance": {
             "type": "integer",
-            "description": "Integer credits"
+            "description": "Spendable integer credits — live reservations already out"
           },
           "currency": {
             "type": "string",
@@ -21500,6 +22813,29 @@
           "updated_at": {
             "type": "string",
             "description": "ISO 8601"
+          },
+          "lots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditLotResponse"
+            },
+            "description": "Live lots in spend order — expiring soonest, non-expiring last"
+          },
+          "holds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditHoldResponse"
+            },
+            "description": "Open reservations (status=held); settled holds are history"
+          },
+          "expiring_soon": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExpiringCreditsResponse"
+              }
+            ],
+            "nullable": true,
+            "description": "The earliest-expiring live lot; null if none expires"
           }
         },
         "required": [
@@ -21658,6 +22994,15 @@
             ],
             "nullable": true,
             "description": "State of the security.require_mfa policy — present on the single-workspace responses (GET/PATCH detail) when the policy is on, null otherwise. The settings block says what was asked for; this says what actually holds, so an administrator who switched MFA on is not told \"done\" while half the organization was never checked"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "description": "Whether THIS caller may delete THIS workspace right now. The ANSWER, not the inputs: a client deriving it from my_role alone draws a delete button on the instance's default workspace and on a personal workspace the next sign-in re-mints — both of which the endpoint refuses, which is the \"button that leads to a refusal\" defect. Same shape and same reason as can_create_workspace on the list response"
+          },
+          "delete_blocked_reason": {
+            "type": "string",
+            "description": "The error code the DELETE would return, or \"\" when can_delete is true. The CODE rather than a sentence, so the client renders the refusal in the caller's own language through the error map it already ships. Server verdict and screen explanation are ONE evaluation (services.deletion_block_reason), so a screen cannot promise what the endpoint denies",
+            "example": "error.409.workspace_is_instance_default"
           }
         },
         "required": [

@@ -162,7 +162,7 @@
     "status": 400,
     "params": [],
     "remediation": "retry",
-    "en": "Verification code has expired. Please request a new one.",
+    "en": "The wait for your code expired. Please sign in again.",
     "owner": "stapel_auth"
   },
   {
@@ -502,6 +502,22 @@
     "remediation": "reauthenticate",
     "en": "First-login challenge is invalid or has expired. Sign in again to restart.",
     "owner": "stapel_auth"
+  },
+  {
+    "code": "error.400.gdpr.unknown_dsar_kind",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Unknown kind of data-protection request.",
+    "owner": "stapel_gdpr"
+  },
+  {
+    "code": "error.400.gdpr.unknown_subject_type",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "This kind of data cannot be erased through this endpoint.",
+    "owner": "stapel_gdpr"
   },
   {
     "code": "error.400.grant_invalid",
@@ -1143,6 +1159,14 @@
     "owner": "stapel_gdpr"
   },
   {
+    "code": "error.403.gdpr.erasure_forbidden",
+    "status": 403,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "You are not allowed to request erasure of this item.",
+    "owner": "stapel_gdpr"
+  },
+  {
     "code": "error.403.last_owner_cannot_be_removed",
     "status": 403,
     "params": [],
@@ -1299,6 +1323,22 @@
     "remediation": "retry",
     "en": "Change request not found.",
     "owner": "stapel_auth"
+  },
+  {
+    "code": "error.404.gdpr.dsar_not_found",
+    "status": 404,
+    "params": [],
+    "remediation": "retry",
+    "en": "Data-protection request not found.",
+    "owner": "stapel_gdpr"
+  },
+  {
+    "code": "error.404.gdpr.erasure_not_found",
+    "status": 404,
+    "params": [],
+    "remediation": "retry",
+    "en": "Erasure request not found.",
+    "owner": "stapel_gdpr"
   },
   {
     "code": "error.404.gdpr.export_not_found",
@@ -1608,6 +1648,22 @@
     "owner": "stapel_auth"
   },
   {
+    "code": "error.409.workspace_is_instance_default",
+    "status": 409,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "This is the instance's default workspace and cannot be deleted; point the instance at another workspace first",
+    "owner": "stapel_workspaces"
+  },
+  {
+    "code": "error.409.workspace_is_personal",
+    "status": 409,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "A personal workspace cannot be deleted on this instance — it is recreated the next time you sign in",
+    "owner": "stapel_workspaces"
+  },
+  {
     "code": "error.410.gdpr.download_consumed",
     "status": 410,
     "params": [],
@@ -1804,6 +1860,14 @@
     "owner": "stapel_cdn"
   },
   {
+    "code": "error.503.mandate_unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "retry",
+    "en": "Cannot verify workspace mandate right now",
+    "owner": "stapel_core"
+  },
+  {
     "code": "error.503.profiles_not_configured",
     "status": 503,
     "params": [],
@@ -1818,5 +1882,13 @@
     "remediation": "wait_and_retry",
     "en": "The profiles service is unavailable; try again later",
     "owner": "stapel_workspaces"
+  },
+  {
+    "code": "error.503.verification_unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "wait_and_retry",
+    "en": "We could not check your sign-in right now. Please try again in a moment.",
+    "owner": "stapel_auth"
   }
 ]
