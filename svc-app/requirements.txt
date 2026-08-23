@@ -3,16 +3,16 @@
 # Stapel framework — PyPI ranges (the way any user installs it). This service
 # hosts every feature module in one INSTALLED_APPS; pip resolves inter-package
 # deps from these.
-stapel-core>=0.24,<0.25
-stapel-auth>=0.21,<0.22
-stapel-gdpr>=0.4,<0.5
-stapel-profiles>=0.13,<0.14
-stapel-notifications>=0.11,<0.12
-stapel-workspaces>=0.25,<0.26
-stapel-billing>=0.7,<0.8
-stapel-cdn>=0.11,<0.12
+stapel-core>=0.34,<0.35
+stapel-auth>=0.24,<0.25
+stapel-gdpr>=0.5,<0.6
+stapel-profiles>=0.14,<0.15
+stapel-notifications>=0.14,<0.15
+stapel-workspaces>=0.29,<0.30
+stapel-billing>=0.8,<0.9
+stapel-cdn>=0.14,<0.15
 stapel-translate>=0.6.1,<0.7
-stapel-categories>=0.5,<0.6
+stapel-categories>=0.6,<0.7
 
 # Service runtime + framework deps (pulled in transitively too; pinned here
 # for the image build).
@@ -40,6 +40,6 @@ pytest-django>=4.7
 # everything above — CI's codegen-check job installs only from this file, so if
 # it's missing here the generator can't run there even though it runs fine
 # against a local dev checkout that happens to have it installed already.
-stapel-tools>=0.40,<0.41
+stapel-tools>=0.45,<0.46
 
 # Add service-specific dependencies below.

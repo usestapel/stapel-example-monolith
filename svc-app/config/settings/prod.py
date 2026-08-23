@@ -13,9 +13,21 @@ CSRF_COOKIE_SECURE = True
 JWT_COOKIE_SECURE = True
 
 # ─── Transport hardening (security-programme.md SEC-4 / gap B1) ───────────
-# SECURE_PROXY_SSL_HEADER (set in the common library settings) already trusts
-# X-Forwarded-Proto from nginx; override via env only if TLS terminates
-# somewhere else entirely.
+# stapel-core 0.34 stopped setting SECURE_PROXY_SSL_HEADER unconditionally:
+# X-Forwarded-Proto is a request header any client can send, so trusting it
+# is now a sentence the deployment has to write. This one is behind the
+# nginx in service-configs/, which overwrites the header on every proxied
+# request (`proxy_set_header X-Forwarded-Proto $scheme`), so the deployment
+# can say so — and must, because without it request.is_secure() is False for
+# every request and SECURE_SSL_REDIRECT below redirects a request that
+# already arrived over HTTPS, forever. Set to False when this service is
+# reached directly, with no proxy in front.
+STAPEL_TRUST_PROXY_SSL_HEADER = (
+    os.getenv("STAPEL_TRUST_PROXY_SSL_HEADER", "True").lower() == "true"
+)
+SECURE_PROXY_SSL_HEADER = (
+    ("HTTP_X_FORWARDED_PROTO", "https") if STAPEL_TRUST_PROXY_SSL_HEADER else None
+)
 SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() == "true"
 
 # HSTS ramp: start conservative — 1 day, no subdomains, no preload — and
