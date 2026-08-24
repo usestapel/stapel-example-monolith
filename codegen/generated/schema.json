@@ -276,6 +276,16 @@
               }
             },
             "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       },
@@ -1480,6 +1490,76 @@
               }
             },
             "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/auth/api/v1/internal/export/{request_id}/part-ready": {
+      "post": {
+        "operationId": "auth_api_v1_internal_export_part_ready_create",
+        "description": "Called by a remote data owner once its portion of an export is staged. Requires a service credential (`IsServiceRequest`), not a user session. When the last outstanding part arrives the archive is assembled.\n\n**Permissions:** `IsServiceRequest, IsAuthenticated`",
+        "summary": "Mark an export part ready (service-to-service)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "GDPR"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRExportPartReadyRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRExportPartReadyRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/GDPRExportPartReadyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
           },
           "400": {
             "content": {
@@ -5796,7 +5876,7 @@
     "/auth/api/v1/user/account/cancel-close": {
       "post": {
         "operationId": "auth_api_v1_user_account_cancel_close_create",
-        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
+        "description": "Stop a closure that is still inside its grace period.\n\nThe account is reactivated and a ``user.deletion_cancelled`` comm action\nis emitted — the mirror of the ``user.deletion_initiated`` that started\nthe closure, so every consumer that took a reversible action on the\ninitiation (suppressed notifications, hidden content, suspended\nmemberships) is told to lift it instead of waiting for its next sync.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Cancel account closure during grace period",
         "tags": [
           "GDPR"
@@ -5914,6 +5994,16 @@
                       "can_cancel": true
                     }
                   }
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -14368,6 +14458,51 @@
           "user_id"
         ]
       },
+      "CreditDebtResponse": {
+        "type": "object",
+        "description": "Credits this wallet owes — service given, or money taken back.\n\nA debt is not a negative balance: the balance still counts the credits\nthat exist. It is collected automatically from the next credits that\narrive, oldest debt first, before they become spendable.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Debt UUID"
+          },
+          "credits_outstanding": {
+            "type": "integer",
+            "description": "Credits still owed"
+          },
+          "credits_initial": {
+            "type": "integer",
+            "description": "Credits the debt was opened for"
+          },
+          "reason": {
+            "type": "string",
+            "description": "partial_debit (work served without cover) or clawback"
+          },
+          "type": {
+            "type": "string",
+            "description": "Transaction type the settlement is billed under"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the uncovered charge was, or null"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601"
+          }
+        },
+        "required": [
+          "created_at",
+          "credits_initial",
+          "credits_outstanding",
+          "description",
+          "id",
+          "reason",
+          "type"
+        ]
+      },
       "CreditHoldResponse": {
         "type": "object",
         "description": "A reservation: credits already out of the spendable balance.\n\nA hold is a real withdrawal, not an overlay — its credits are gone from\n``balance`` from the moment it is created, and come back only if it is\nreleased or expires.",
@@ -16826,6 +16961,22 @@
           "subject_type"
         ]
       },
+      "GDPRExportPartReadyRequest": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "The data owner's section name, e.g. \"recordings\"."
+          },
+          "bucket_path": {
+            "type": "string",
+            "description": "Where the staged payload lives, empty for in-process owners."
+          }
+        },
+        "required": [
+          "service"
+        ]
+      },
       "HeaderConfig": {
         "type": "object",
         "description": "Serializer for header feature configuration.",
@@ -18439,17 +18590,17 @@
       },
       "OtpMeta": {
         "type": "object",
-        "description": "Server-authoritative OTP parameters — the frontend must read these\ninstead of guessing (e.g. hardcoding a 6-box code input when the backend\nactually issues 4-digit codes).\n\nEvery value here is sourced from the exact same constant/setting that\nthe backend validates against (otp/services.py.OTP_CODE_LENGTH,\nmfa/services.py.TOTPService.CODE_LENGTH, AUTH_OTP_TTL, AUTH_OTP_RESEND_COOLDOWN)\n— a guard test asserts the DB/serializer field widths agree with the\nsame constants, so this can't silently drift from what the server\nactually accepts.",
+        "description": "Server-authoritative OTP parameters — the frontend must read these\ninstead of guessing (e.g. hardcoding a 6-box code input when the backend\nactually issues 4-digit codes).\n\nEvery value here is sourced from the exact same function/constant the\nbackend issues by: the code lengths come from\n``otp/services.py.issued_code_length(channel)`` — the SAME function\n``generate_code`` derives its width from, so a mocked channel reports the\nwidth of MOCK_OTP_CODE and not OTP_LENGTH — and the rest from\nmfa/services.py.TOTPService.CODE_LENGTH, AUTH_OTP_TTL,\nAUTH_OTP_RESEND_COOLDOWN. A guard test asserts the DB/serializer field\nwidths agree with the same constants, so this can't silently drift from\nwhat the server actually accepts.",
         "properties": {
           "email_code_length": {
             "type": "integer",
-            "description": "Digits in an email OTP code",
-            "example": 4
+            "description": "Digits in the email OTP code this deployment issues — the mock code's width on a mocked channel",
+            "example": 6
           },
           "phone_code_length": {
             "type": "integer",
-            "description": "Digits in a phone/SMS OTP code",
-            "example": 4
+            "description": "Digits in the phone/SMS OTP code this deployment issues — the mock code's width on a mocked channel",
+            "example": 6
           },
           "totp_code_length": {
             "type": "integer",
@@ -22836,6 +22987,17 @@
             ],
             "nullable": true,
             "description": "The earliest-expiring live lot; null if none expires"
+          },
+          "debts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditDebtResponse"
+            },
+            "description": "Open debts, oldest first — the order they are collected in"
+          },
+          "debt_outstanding": {
+            "type": "integer",
+            "description": "Total credits owed. The next credits into this"
           }
         },
         "required": [
