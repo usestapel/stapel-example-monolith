@@ -910,7 +910,7 @@
     "/auth/api/v1/email/request/": {
       "post": {
         "operationId": "auth_api_v1_email_request_create",
-        "description": "Request email verification code (OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per email/device\n- If authenticated non-anonymous user requests OTP for an email already registered to another account, returns 409 Conflict\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Request email verification code (OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per email/device\n- If authenticated non-anonymous user requests OTP for an email already registered to another account, returns 409 Conflict\n- If the caller already has a VERIFIED email, requesting a code for a different one returns 403 `error.403.change_requires_current` — replacing a verified authenticator goes through the email change flow, which proves the current address first\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Email Auth"
         ],
@@ -978,6 +978,16 @@
             },
             "description": ""
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
           "409": {
             "content": {
               "application/json": {
@@ -1014,7 +1024,7 @@
     "/auth/api/v1/email/verify/": {
       "post": {
         "operationId": "auth_api_v1_email_verify_create",
-        "description": "Verify email and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new email** → REGISTERED (new account created)\n- **Unauthenticated user + existing email** → LOGGED_IN (login to existing account)\n- **Anonymous user + new email** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing email** → MERGED (anonymous merged into existing account)\n- **Authenticated user + own/new email** → MODIFIED (user adds/changes email)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user added/changed email\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Verify email and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new email** → REGISTERED (new account created)\n- **Unauthenticated user + existing email** → LOGGED_IN (login to existing account)\n- **Anonymous user + new email** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing email** → MERGED (anonymous merged into existing account)\n- **Authenticated user + FIRST email** → MODIFIED (user sets an email the account did not have verified)\n- **Authenticated user + a DIFFERENT email over a verified one** → 403 `error.403.change_requires_current` (use the email change flow: it proves the current email first)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user set an email, or re-verified the one already on the account\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Email Auth"
         ],
@@ -1110,6 +1120,16 @@
                     },
                     "summary": "Invalid code error"
                   }
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -3659,7 +3679,7 @@
     "/auth/api/v1/phone/request/": {
       "post": {
         "operationId": "auth_api_v1_phone_request_create",
-        "description": "Request phone verification code (SMS OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per phone/device\n- If authenticated non-anonymous user requests OTP for a phone already registered to another account, returns 409 Conflict\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Request phone verification code (SMS OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per phone/device\n- If authenticated non-anonymous user requests OTP for a phone already registered to another account, returns 409 Conflict\n- If the caller already has a VERIFIED phone, requesting a code for a different one returns 403 `error.403.change_requires_current` — replacing a verified authenticator goes through the phone change flow, which proves the current number first\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Phone Auth"
         ],
@@ -3727,6 +3747,16 @@
             },
             "description": ""
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
           "409": {
             "content": {
               "application/json": {
@@ -3763,7 +3793,7 @@
     "/auth/api/v1/phone/verify/": {
       "post": {
         "operationId": "auth_api_v1_phone_verify_create",
-        "description": "Verify phone number and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new phone** → REGISTERED (new account created)\n- **Unauthenticated user + existing phone** → LOGGED_IN (login to existing account)\n- **Anonymous user + new phone** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing phone** → MERGED (anonymous merged into existing account)\n- **Authenticated user + own/new phone** → MODIFIED (user adds/changes phone)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user added/changed phone\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Verify phone number and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new phone** → REGISTERED (new account created)\n- **Unauthenticated user + existing phone** → LOGGED_IN (login to existing account)\n- **Anonymous user + new phone** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing phone** → MERGED (anonymous merged into existing account)\n- **Authenticated user + FIRST phone** → MODIFIED (user sets a phone the account did not have verified)\n- **Authenticated user + a DIFFERENT phone over a verified one** → 403 `error.403.change_requires_current` (use the phone change flow: it proves the current phone first)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user set a phone, or re-verified the one already on the account\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Phone Auth"
         ],
@@ -3813,6 +3843,16 @@
             "description": ""
           },
           "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9065,7 +9105,7 @@
     "/cdn/api/v1/upload/image/": {
       "post": {
         "operationId": "upload_image",
-        "description": "Upload an image file for processing.\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing image data (200 OK)\n3. If new file, creates image record and generates variants via background task\n4. Variants are generated in WebP format at multiple resolutions\n\n**Generated variants (all WebP):**\n- 16px, 32px, 64px, 120px - min-side thumbnails\n- 160px, 240px, 480px, 560px, 720px, 1080px - w/h preview branches\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_IMAGE_SIZE\"]`, 20MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n**Stored type:** `\"product\"` — one value from `STAPEL_CDN[\"ASSET_TYPES\"]`,\nsame as any type `TypedImageUploadView` accepts. The zero-infra default is\n`(\"avatar\",)` only (see `ASSET_TYPES` in CONFIG.MD), so a deployment that\nnever added `\"product\"` gets a 400 here, exactly as\n`/images/product/upload/` already does for that string.\n\n\n**Permissions:** `IsNotAnonymousUser`",
+        "description": "Upload an image file for processing.\n\n**Supported formats:** JPEG, PNG, GIF, WebP, BMP, HEIC, HEIF\n\n**What happens on upload:**\n1. File hash (SHA-256) is calculated for deduplication\n2. If file already exists, returns existing image data (200 OK)\n3. If new file, creates image record and generates variants via background task\n4. Variants are generated in WebP format at multiple resolutions\n\n**Generated variants (all WebP):**\n- 16px, 32px, 64px, 120px - min-side thumbnails\n- 160px, 240px, 480px, 560px, 720px, 1080px - w/h preview branches\n\n**`variants_status` — read it before you render a variant URL.** Every\n`variant_<size>_url` in this response is derived from `<type>/<hash>`, so\nall of them are present and well-formed in the 201 that creates the row,\n*before* the background task has written a single file. `variants_status`\nis `\"pending\"` until generation succeeds and `\"ready\"` afterwards\n(`variants_ready_at` carries the moment, null while pending). A `pending`\npayload's variant URLs are a prediction, not a resource; poll the media ref\n(`/file-exists/`) or fall back to `original_url` until it reads `ready`.\nA row that stays `pending` is a broken pipeline, not a slow one — see\n`checks.W008`.\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_IMAGE_SIZE\"]`, 20MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n**Stored type:** `\"product\"` — one value from `STAPEL_CDN[\"ASSET_TYPES\"]`,\nsame as any type `TypedImageUploadView` accepts. The zero-infra default is\n`(\"avatar\",)` only (see `ASSET_TYPES` in CONFIG.MD), so a deployment that\nnever added `\"product\"` gets a 400 here, exactly as\n`/images/product/upload/` already does for that string.\n\n\n**Permissions:** `IsNotAnonymousUser`",
         "summary": "Upload an image",
         "tags": [
           "Images"
@@ -9111,6 +9151,8 @@
                         "original_size": 2048576,
                         "original_url": "/media/cdn/images/original/a1b2c3d4.jpg",
                         "variant_720_url": "/media/cdn/images/720/a1b2c3d4.webp",
+                        "variants_status": "pending",
+                        "variants_ready_at": null,
                         "is_processed": false
                       }
                     },
@@ -9505,7 +9547,7 @@
     "/profiles/api/v1/{user_id}": {
       "get": {
         "operationId": "get_profile",
-        "description": "Get compact profile of a specific user by UUID. Includes relationship status with current user if authenticated.\n\n**Permissions:** `AllowAny`",
+        "description": "Get compact profile of a specific user by UUID. Includes relationship status with current user if authenticated. A registered user who has never filled anything in answers 200 with an empty-but-renderable profile; 404 means the id names no user.\n\n**Permissions:** `AllowAny`",
         "summary": "Get user profile",
         "parameters": [
           {
@@ -9891,7 +9933,7 @@
     "/profiles/api/v1/batch": {
       "post": {
         "operationId": "batch_profiles",
-        "description": "Resolve up to PROFILES_BATCH_MAX_IDS (default 100) public profiles in one call. Ids with no profile row come back in `missing` — a normal state, never a 404. Ids in neither list were not part of the request. Over the limit the request is refused with `error.400.too_many_ids` carrying both numbers; the list is never silently truncated.\n\n**Permissions:** `AllowAny`",
+        "description": "Resolve up to PROFILES_BATCH_MAX_IDS (default 100) public profiles in one call. A registered user who has never filled anything in is answered with an empty-but-renderable profile, exactly as `GET .../<user_id>` answers them. Ids that name no user come back in `missing` — a normal state, never a 404. Ids in neither list were not part of the request. Over the limit the request is refused with `error.400.too_many_ids` carrying both numbers; the list is never silently truncated.\n\n**Permissions:** `AllowAny`",
         "summary": "Get many user profiles at once",
         "tags": [
           "Profile"
@@ -16642,6 +16684,99 @@
             "readOnly": true,
             "description": "URL to original uploaded file"
           },
+          "render_meta": {
+            "type": "object",
+            "description": "cdn.describe snapshot for this file (see RenderMeta).",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "nullable": true,
+                "description": "Open media-kind registry (STAPEL_CDN['MEDIA_KINDS']): image, gif, video, audio, file, or a host-defined kind."
+              },
+              "mime": {
+                "type": "string"
+              },
+              "ext": {
+                "type": "string",
+                "description": "Lowercase, dot-prefixed."
+              },
+              "bytes": {
+                "type": "integer"
+              },
+              "width": {
+                "type": "integer",
+                "nullable": true
+              },
+              "height": {
+                "type": "integer",
+                "nullable": true
+              },
+              "aspect": {
+                "type": "number",
+                "format": "float",
+                "nullable": true,
+                "description": "width / height, 6dp."
+              },
+              "square": {
+                "type": "boolean"
+              },
+              "animated": {
+                "type": "boolean"
+              },
+              "duration_ms": {
+                "type": "integer",
+                "nullable": true
+              },
+              "preview_b64": {
+                "type": "string",
+                "nullable": true,
+                "description": "data:image/webp;base64,... bounded by STAPEL_CDN['MICRO_PREVIEW_MAX_BYTES']; null when refused or not generated, with meta_reason saying which."
+              },
+              "preview_kind": {
+                "type": "string",
+                "enum": [
+                  "blur",
+                  "poster",
+                  "waveform"
+                ],
+                "nullable": true
+              },
+              "poster_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "meta_status": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "partial",
+                  "missing"
+                ]
+              },
+              "meta_reason": {
+                "type": "string",
+                "nullable": true,
+                "description": "stapel_cdn.metadata.REASONS; null when ok."
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "required": [
+              "ref",
+              "mime",
+              "ext",
+              "bytes",
+              "meta_status"
+            ],
+            "readOnly": true
+          },
           "refs": {
             "type": "array",
             "items": {
@@ -16679,6 +16814,7 @@
           "original_size",
           "original_url",
           "prefix",
+          "render_meta",
           "updated_at",
           "uploaded_by",
           "uploaded_by_username"
@@ -17312,6 +17448,115 @@
             "readOnly": true,
             "description": "Generated variants with geometry: [{tier, branch, url, width, height}]"
           },
+          "variants_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VariantsStatusEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "'pending' — variant generation has not completed, every variant_<size>_url in this payload is a prediction; 'ready' — the ladder exists and the URLs resolve.\n\n* `pending` - pending\n* `ready` - ready"
+          },
+          "variants_ready_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "nullable": true,
+            "description": "When variant generation completed; null while pending."
+          },
+          "render_meta": {
+            "type": "object",
+            "description": "cdn.describe snapshot for this image (see RenderMeta).",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "nullable": true,
+                "description": "Open media-kind registry (STAPEL_CDN['MEDIA_KINDS']): image, gif, video, audio, file, or a host-defined kind."
+              },
+              "mime": {
+                "type": "string"
+              },
+              "ext": {
+                "type": "string",
+                "description": "Lowercase, dot-prefixed."
+              },
+              "bytes": {
+                "type": "integer"
+              },
+              "width": {
+                "type": "integer",
+                "nullable": true
+              },
+              "height": {
+                "type": "integer",
+                "nullable": true
+              },
+              "aspect": {
+                "type": "number",
+                "format": "float",
+                "nullable": true,
+                "description": "width / height, 6dp."
+              },
+              "square": {
+                "type": "boolean"
+              },
+              "animated": {
+                "type": "boolean"
+              },
+              "duration_ms": {
+                "type": "integer",
+                "nullable": true
+              },
+              "preview_b64": {
+                "type": "string",
+                "nullable": true,
+                "description": "data:image/webp;base64,... bounded by STAPEL_CDN['MICRO_PREVIEW_MAX_BYTES']; null when refused or not generated, with meta_reason saying which."
+              },
+              "preview_kind": {
+                "type": "string",
+                "enum": [
+                  "blur",
+                  "poster",
+                  "waveform"
+                ],
+                "nullable": true
+              },
+              "poster_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "meta_status": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "partial",
+                  "missing"
+                ]
+              },
+              "meta_reason": {
+                "type": "string",
+                "nullable": true,
+                "description": "stapel_cdn.metadata.REASONS; null when ok."
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "required": [
+              "ref",
+              "mime",
+              "ext",
+              "bytes",
+              "meta_status"
+            ],
+            "readOnly": true
+          },
           "is_processed": {
             "type": "boolean",
             "readOnly": true,
@@ -17350,6 +17595,7 @@
           "original_url",
           "original_width",
           "prefix",
+          "render_meta",
           "type",
           "updated_at",
           "uploaded_by",
@@ -17366,7 +17612,9 @@
           "variant_560_url",
           "variant_64_url",
           "variant_720_url",
-          "variants_meta"
+          "variants_meta",
+          "variants_ready_at",
+          "variants_status"
         ]
       },
       "ImageTypeEnum": {
@@ -22595,6 +22843,14 @@
           "width"
         ]
       },
+      "VariantsStatusEnum": {
+        "enum": [
+          "pending",
+          "ready"
+        ],
+        "type": "string",
+        "description": "* `pending` - pending\n* `ready` - ready"
+      },
       "VerificationChallengeInfoResponse": {
         "type": "object",
         "description": "Step-up verification challenge as seen by its owner.",
@@ -22854,10 +23110,109 @@
             "format": "uri",
             "readOnly": true
           },
+          "poster_url": {
+            "type": "string",
+            "format": "uri",
+            "readOnly": true,
+            "description": "Derived poster frame; null until one has been written."
+          },
+          "render_meta": {
+            "type": "object",
+            "description": "cdn.describe snapshot for this video (see RenderMeta).",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "nullable": true,
+                "description": "Open media-kind registry (STAPEL_CDN['MEDIA_KINDS']): image, gif, video, audio, file, or a host-defined kind."
+              },
+              "mime": {
+                "type": "string"
+              },
+              "ext": {
+                "type": "string",
+                "description": "Lowercase, dot-prefixed."
+              },
+              "bytes": {
+                "type": "integer"
+              },
+              "width": {
+                "type": "integer",
+                "nullable": true
+              },
+              "height": {
+                "type": "integer",
+                "nullable": true
+              },
+              "aspect": {
+                "type": "number",
+                "format": "float",
+                "nullable": true,
+                "description": "width / height, 6dp."
+              },
+              "square": {
+                "type": "boolean"
+              },
+              "animated": {
+                "type": "boolean"
+              },
+              "duration_ms": {
+                "type": "integer",
+                "nullable": true
+              },
+              "preview_b64": {
+                "type": "string",
+                "nullable": true,
+                "description": "data:image/webp;base64,... bounded by STAPEL_CDN['MICRO_PREVIEW_MAX_BYTES']; null when refused or not generated, with meta_reason saying which."
+              },
+              "preview_kind": {
+                "type": "string",
+                "enum": [
+                  "blur",
+                  "poster",
+                  "waveform"
+                ],
+                "nullable": true
+              },
+              "poster_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "meta_status": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "partial",
+                  "missing"
+                ]
+              },
+              "meta_reason": {
+                "type": "string",
+                "nullable": true,
+                "description": "stapel_cdn.metadata.REASONS; null when ok."
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "required": [
+              "ref",
+              "mime",
+              "ext",
+              "bytes",
+              "meta_status"
+            ],
+            "readOnly": true
+          },
           "is_processed": {
             "type": "boolean",
             "readOnly": true,
-            "description": "Whether variants have been generated"
+            "description": "Whether metadata/variants have been generated"
           },
           "uploaded_by": {
             "type": "string",
@@ -22892,6 +23247,8 @@
           "original_size",
           "original_url",
           "original_width",
+          "poster_url",
+          "render_meta",
           "updated_at",
           "uploaded_by",
           "uploaded_by_username",
