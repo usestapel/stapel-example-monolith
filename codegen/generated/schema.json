@@ -136,7 +136,7 @@
     "/auth/api/v1/anonymous/": {
       "post": {
         "operationId": "auth_api_v1_anonymous_create",
-        "description": "Create anonymous user. Minting a NEW guest is capped per client per hour (`ANONYMOUS_RATE_LIMIT_PER_HOUR`) — reusing an existing guest session, by `device_id` or by presenting the anonymous session itself, is free.\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Create anonymous user. Minting a NEW guest is capped per client per hour (`ANONYMOUS_RATE_LIMIT_PER_HOUR`) — reusing an existing guest session, by `device_id` from the SAME client address or by presenting the anonymous session itself, is free. `device_id` is a dedup key, not a credential: its 60-second slot is scoped to the caller's address, and a value short enough to guess is refused (`error.400.device_id_weak`).\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Anonymous Auth"
         ],
@@ -2351,6 +2351,70 @@
       }
     },
     "/auth/api/v1/passkey/{id}/": {
+      "patch": {
+        "operationId": "auth_api_v1_passkey_partial_update",
+        "description": "Change the human-readable label of one of the *caller's own* credentials. Scoped by ownership at lookup time: a credential belonging to another user answers 404, exactly as an unknown id does. Only `device_name` is writable — the attested identity (`aaguid`, `transports`) and the observed history (`created_at`, `last_used_at`) are server-owned.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
+        "summary": "Rename a passkey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Passkeys"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPasskeyRename"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPasskeyRename"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPasskeyRename"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyItem"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
       "delete": {
         "operationId": "auth_api_v1_passkey_destroy",
         "description": "Overridable serializer seams for stapel-auth API views.\n\nViews declare ``<purpose>_serializer_class`` class attributes following the\n``*_request_serializer_class`` / ``*_response_serializer_class`` naming\nconvention (e.g. ``request_serializer_class`` or, when a view uses several\nserializers, purpose-prefixed names such as ``login_request_serializer_class``\nor ``auth_response_serializer_class``). For every such attribute this mixin\nsupplies the matching ``get_<purpose>_serializer_class()`` getter, so hosts\ncan swap a serializer by subclassing the view and overriding either the\nattribute or the getter::\n\n    class MyMagicLinkViewSet(MagicLinkViewSet):\n        response_serializer_class = MyResponseSerializer\n\nHandler bodies instantiate serializers exclusively through the getters, so\nan override is picked up everywhere the serializer is used.\n\n**Permissions:** `IsServiceRequest, IsSuperUser`",
@@ -4689,6 +4753,23 @@
               }
             },
             "description": ""
+          }
+        }
+      }
+    },
+    "/auth/api/v1/site/": {
+      "get": {
+        "operationId": "auth_api_v1_site_retrieve",
+        "description": "``GET /<auth-prefix>/api/v1/site/`` — host → brand, for the storefront.\n\n**Permissions:** `AllowAny`",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {}
+        ],
+        "responses": {
+          "200": {
+            "description": "No response body"
           }
         }
       }
@@ -8497,6 +8578,136 @@
         }
       }
     },
+    "/cdn/api/v1/describe/": {
+      "post": {
+        "operationId": "describe_media",
+        "description": "Resolve up to 50 media refs to the\nrender-metadata snapshot a UI needs to draw them with no second round trip and\nno layout jump: aspect box, byte size, an inline `preview_b64` placeholder,\n`preview_kind` (known even while `preview_b64` is still null, so the box can be\nreserved in the right shape), and `duration_ms` for time-based media.\n\nThis is the HTTP form of the `cdn.describe_many` comm Function and returns the\nidentical object — the same snapshot the upload endpoints inline as\n`render_meta`.\n\n**Unknown refs are data, not an error.** A ref that was deleted, never stored,\nor is malformed comes back in `missing`; the call still succeeds and the other\nsnapshots still arrive, so one dead attachment does not cost a page its other\nthirty-nine.\n\n**Duplicates collapse** before the 50-ref ceiling is\napplied. Over the ceiling the answer is `error.400.too_many_refs` with `count`\nand `max` in the params — page the batch. The ceiling exists because every\nsnapshot may inline a preview, so batch size is response size.\n\n**Denormalize the result once**, when the ref is resolved. It is an immutable\nsnapshot, not something to recompute per render.\n",
+        "summary": "Render metadata for a batch of media refs",
+        "tags": [
+          "Media"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DescribeManyRequest"
+              },
+              "examples": {
+                "DescribeThreeAttachments,OneOfThemGone": {
+                  "value": {
+                    "refs": [
+                      "avatar/a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+                      "video/b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+                      "product/c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3"
+                    ]
+                  },
+                  "summary": "Describe three attachments, one of them gone"
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/DescribeManyRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/DescribeManyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeManyResponse"
+                },
+                "examples": {
+                  "OneResolved,OneMissing": {
+                    "value": {
+                      "items": {
+                        "avatar/a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1": {
+                          "ref": "avatar/a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+                          "kind": "image",
+                          "mime": "image/jpeg",
+                          "ext": ".jpg",
+                          "bytes": 51234,
+                          "width": 1600,
+                          "height": 900,
+                          "aspect": 1.777778,
+                          "square": false,
+                          "animated": false,
+                          "duration_ms": null,
+                          "preview_b64": "data:image/webp;base64,UklGRh...",
+                          "preview_kind": "blur",
+                          "poster_url": null,
+                          "meta_status": "ok",
+                          "meta_reason": null,
+                          "variants": []
+                        }
+                      },
+                      "missing": [
+                        "product/c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3"
+                      ]
+                    },
+                    "summary": "One resolved, one missing"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/cdn/api/v1/file/exists/": {
       "get": {
         "operationId": "check_file_exists_get",
@@ -9339,9 +9550,51 @@
       }
     },
     "/notifications/api/v1/devices/": {
+      "get": {
+        "operationId": "list_device_tokens",
+        "description": "The caller's own push devices, most recently registered first. The raw token is never returned: a client identifies its own device by hashing the token it holds (SHA-256, hex) and matching `token_fingerprint`. Rows with `is_active: false` are still registered but the push provider has rejected the token, so nothing is delivered to them.\n\n**Permissions:** `IsNotAnonymousUser`",
+        "summary": "List registered push devices",
+        "tags": [
+          "Devices"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceListItemResponse"
+                  }
+                },
+                "examples": {
+                  "DeviceListItemResponse": {
+                    "value": [
+                      {
+                        "id": 42,
+                        "token_fingerprint": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+                        "platform": "ios",
+                        "is_active": true,
+                        "created_at": "2026-03-17T10:30:00Z",
+                        "last_seen": "2026-03-18T08:02:11Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
       "post": {
         "operationId": "register_device_token",
-        "description": "Register a push notification token.\n\n**Permissions:** `IsNotAnonymousUser`",
+        "description": "List the caller's push devices, or register one.\n\n**Permissions:** `IsNotAnonymousUser`",
         "summary": "Register push token",
         "tags": [
           "Devices"
@@ -9443,10 +9696,50 @@
         }
       }
     },
+    "/notifications/api/v1/devices/by-id/{device_id}/": {
+      "delete": {
+        "operationId": "unregister_device",
+        "description": "Unregister a push device by the id ``GET /devices/`` handed out.\n\nThe token-keyed sibling above stays: a client that has just minted a token\nand wants it gone does not need a round trip through the list. This one is\nfor the other direction — a device row read from the list, unregistered by\nthe identifier the list gave, without the caller ever holding the token\n(a second device in the list is not one this client can produce a token\nfor at all).\n\n**Permissions:** `IsNotAnonymousUser`",
+        "summary": "Unregister a push device by id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Devices"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/notifications/api/v1/feed/": {
       "get": {
         "operationId": "get_notification_feed",
-        "description": "Returns push notification log entries for the authenticated user, ordered by created_at desc.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Returns push notification log entries for the authenticated user, ordered by created_at desc. Each row carries `read_at` — null while unread — and the page envelope carries `unread_count`, the number of unread rows in the WHOLE feed, so a bell badge is answered by the same request that fills the list.\n\n**Permissions:** `IsAuthenticated`",
         "summary": "Get notification feed",
         "parameters": [
           {
@@ -9505,9 +9798,73 @@
                       "notification_type": "listing_blocked",
                       "title": "Your listing has been blocked",
                       "body": "Your listing was blocked for guideline violations.",
-                      "created_at": "2026-03-17T10:30:00Z"
+                      "created_at": "2026-03-17T10:30:00Z",
+                      "read_at": "2026-03-17T11:04:52Z"
                     }
                   }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/notifications/api/v1/feed/read/": {
+      "post": {
+        "operationId": "mark_notification_feed_read",
+        "description": "Send exactly one of `ids` (feed item ids from `GET feed/`, at most 500) or `all: true`. Idempotent: `marked` counts the rows this call moved from unread to read, so a repeat returns 0. `unread_count` is the caller's remaining unread total after the write. Only the caller's own rows are touched; unknown or foreign ids are ignored rather than reported, and when anything changed a `notification.read` signal goes out on `notifications:user:<id>` so the caller's other open screens correct their badge.\n\n**Permissions:** `IsAuthenticated`",
+        "summary": "Mark feed items read",
+        "tags": [
+          "Feed"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedReadRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedReadRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedReadRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedReadResponse"
+                },
+                "examples": {
+                  "FeedReadResponse": {
+                    "value": {
+                      "marked": 3
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -11864,6 +12221,99 @@
         }
       }
     },
+    "/translate/api/v1/text/": {
+      "post": {
+        "operationId": "translate_api_v1_text_create",
+        "description": "Translate a text — or a batch of short texts — into a configured language.\n\nSend **either** `text` (one string) **or** `texts` (a list, order preserved,\ntranslated in one provider call so a screen's copy keeps a consistent tone).\n`source_lang` defaults to the module's `DEFAULT_LANGUAGE`; `context` is a\nfree-text domain hint that rides into the prompt.\n\nBounded on purpose — every miss spends real money on an LLM budget:\n`TEXT_MAX_CHARS` per text (`error.400.translate.text_too_long`),\n`TEXT_BATCH_MAX_ITEMS` (`error.400.translate.batch_too_large`) and\n`TEXT_BATCH_MAX_CHARS` (`error.400.translate.batch_too_long`) per batch,\nthrottled under scope `translate_text`, and cached for `TEXT_CACHE_TTL`\nseconds under a digest of (source, target, context, text).\n\n`text` in the response is `texts[0]` — the single-text form's answer, and a\nconvenience for it.\n",
+        "summary": "Translate arbitrary text",
+        "tags": [
+          "Translations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextTranslationRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/TextTranslationRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TextTranslationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextTranslationResult"
+                },
+                "examples": {
+                  "TextTranslationResult": {
+                    "value": {
+                      "texts": [
+                        "Hola"
+                      ],
+                      "text": "Hola",
+                      "source_language": "en",
+                      "target_language": "es",
+                      "provider": "AgentProvider"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": ""
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/translate/api/v1/translations/": {
       "get": {
         "operationId": "translate_api_v1_translations_list",
@@ -12213,7 +12663,7 @@
     "/workspaces/api/v1/{workspace_id}": {
       "get": {
         "operationId": "workspaces_api_v1_retrieve_2",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Overridable request/response serializer seam for an API view.\n\nDeclare the classes as attributes, read them through the getters::\n\n    class WalletView(SerializerSeamMixin, APIView):\n        response_serializer_class = WalletResponseSerializer\n\n        def get(self, request):\n            response_cls = self.get_response_serializer_class()\n            return StapelResponse(response_cls(wallet_to_dto(...)))\n\nA host project swaps either direction by subclassing and setting the\nattribute, or overrides the getter for a per-request decision — no HTTP\nmethod body is ever copied. ``None`` means the direction carries no\nserializer (raw ``request.FILES``, an empty 204 body).\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -12268,7 +12718,7 @@
       },
       "patch": {
         "operationId": "workspaces_api_v1_partial_update",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Overridable request/response serializer seam for an API view.\n\nDeclare the classes as attributes, read them through the getters::\n\n    class WalletView(SerializerSeamMixin, APIView):\n        response_serializer_class = WalletResponseSerializer\n\n        def get(self, request):\n            response_cls = self.get_response_serializer_class()\n            return StapelResponse(response_cls(wallet_to_dto(...)))\n\nA host project swaps either direction by subclassing and setting the\nattribute, or overrides the getter for a per-request decision — no HTTP\nmethod body is ever copied. ``None`` means the direction carries no\nserializer (raw ``request.FILES``, an empty 204 body).\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -12770,7 +13220,7 @@
     "/workspaces/api/v1/{workspace_id}/members": {
       "get": {
         "operationId": "workspaces_api_v1_members_list",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Overridable request/response serializer seam for an API view.\n\nDeclare the classes as attributes, read them through the getters::\n\n    class WalletView(SerializerSeamMixin, APIView):\n        response_serializer_class = WalletResponseSerializer\n\n        def get(self, request):\n            response_cls = self.get_response_serializer_class()\n            return StapelResponse(response_cls(wallet_to_dto(...)))\n\nA host project swaps either direction by subclassing and setting the\nattribute, or overrides the getter for a per-request decision — no HTTP\nmethod body is ever copied. ``None`` means the direction carries no\nserializer (raw ``request.FILES``, an empty 204 body).\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "name": "anchor",
@@ -12858,7 +13308,7 @@
     "/workspaces/api/v1/{workspace_id}/members/{user_id}": {
       "patch": {
         "operationId": "workspaces_api_v1_members_partial_update",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Overridable request/response serializer seam for an API view.\n\nDeclare the classes as attributes, read them through the getters::\n\n    class WalletView(SerializerSeamMixin, APIView):\n        response_serializer_class = WalletResponseSerializer\n\n        def get(self, request):\n            response_cls = self.get_response_serializer_class()\n            return StapelResponse(response_cls(wallet_to_dto(...)))\n\nA host project swaps either direction by subclassing and setting the\nattribute, or overrides the getter for a per-request decision — no HTTP\nmethod body is ever copied. ``None`` means the direction carries no\nserializer (raw ``request.FILES``, an empty 204 body).\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -12931,7 +13381,7 @@
       },
       "delete": {
         "operationId": "workspaces_api_v1_members_destroy",
-        "description": "Overridable serializer seams for API views.\n\nSubclasses (or downstream projects) can swap the request/response\nserializers without copying method bodies:\n\n    class MyWorkspaceDetailView(WorkspaceDetailView):\n        response_serializer_class = MyWorkspaceResponseSerializer\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Overridable request/response serializer seam for an API view.\n\nDeclare the classes as attributes, read them through the getters::\n\n    class WalletView(SerializerSeamMixin, APIView):\n        response_serializer_class = WalletResponseSerializer\n\n        def get(self, request):\n            response_cls = self.get_response_serializer_class()\n            return StapelResponse(response_cls(wallet_to_dto(...)))\n\nA host project swaps either direction by subclassing and setting the\nattribute, or overrides the getter for a per-request decision — no HTTP\nmethod body is ever copied. ``None`` means the direction carries no\nserializer (raw ``request.FILES``, an empty 204 body).\n\n**Permissions:** `IsAuthenticated`",
         "parameters": [
           {
             "in": "path",
@@ -13754,6 +14204,7 @@
         "properties": {
           "device_id": {
             "type": "string",
+            "description": "Optional opaque random token identifying this install, used to deduplicate guest mints for 60 seconds. At least 16 characters of [A-Za-z0-9-._~:+/=] — a UUID or a random hex/base64 value, not a readable name. The dedup slot is scoped to the caller's IP, so this is not a credential and cannot resume another client's session. Omit it to mint a fresh guest every time.",
             "maxLength": 255
           }
         }
@@ -14933,6 +15384,189 @@
         },
         "required": [
           "has_pending_change"
+        ]
+      },
+      "DescribeManyRequest": {
+        "type": "object",
+        "description": "The refs one ``POST /describe/`` call asks about.\n\nShape only. The ceiling is NOT checked here: it belongs to\n``services.describe_refs``, the body the comm Function shares, so that the\nrule (dedup, then compare against ``DESCRIBE_MANY_LIMIT``) has exactly one\nimplementation and the two transports cannot drift apart on where the\nfifty-first ref stops being acceptable.\n\nA ref whose shape is wrong is not a 400 either: it resolves to nothing and\ncomes back in ``missing`` like any other unresolvable ref, so one\nmalformed entry never costs the caller the other forty-nine snapshots.",
+        "properties": {
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "description": "Media refs in <prefix>/<hash> form. Duplicates collapse before the 50-ref ceiling is applied."
+          }
+        },
+        "required": [
+          "refs"
+        ]
+      },
+      "DescribeManyResponse": {
+        "type": "object",
+        "description": "Batch render-metadata snapshots, plus the refs that resolved to nothing.",
+        "properties": {
+          "items": {
+            "type": "object",
+            "description": "Snapshot per ref that resolved, keyed by ref",
+            "additionalProperties": {
+              "type": "object",
+              "description": "Everything needed to render this attachment with no second round trip: aspect box, byte size, inline placeholder, and duration for time-based media. Identical to the cdn.describe comm Function's return value.",
+              "properties": {
+                "ref": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Open media-kind registry (STAPEL_CDN['MEDIA_KINDS']): image, gif, video, audio, file, or a host-defined kind."
+                },
+                "mime": {
+                  "type": "string"
+                },
+                "ext": {
+                  "type": "string",
+                  "description": "Lowercase, dot-prefixed."
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "width": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "height": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "aspect": {
+                  "type": "number",
+                  "format": "float",
+                  "nullable": true,
+                  "description": "width / height, 6dp."
+                },
+                "square": {
+                  "type": "boolean"
+                },
+                "animated": {
+                  "type": "boolean"
+                },
+                "duration_ms": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "preview_b64": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "data:image/webp;base64,... bounded by STAPEL_CDN['MICRO_PREVIEW_MAX_BYTES']; null when refused or not generated, with meta_reason saying which."
+                },
+                "preview_kind": {
+                  "type": "string",
+                  "enum": [
+                    "blur",
+                    "poster",
+                    "waveform"
+                  ],
+                  "nullable": true
+                },
+                "poster_url": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "meta_status": {
+                  "type": "string",
+                  "enum": [
+                    "ok",
+                    "partial",
+                    "missing"
+                  ]
+                },
+                "meta_reason": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "stapel_cdn.metadata.REASONS; null when ok."
+                },
+                "variants": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "required": [
+                "ref",
+                "mime",
+                "ext",
+                "bytes",
+                "meta_status"
+              ]
+            },
+            "example": {
+              "avatar/<hash>": {
+                "ref": "avatar/<hash>",
+                "meta_status": "ok"
+              }
+            }
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Refs that resolved to nothing — deleted, never existed, or malformed. Data, not an error",
+            "example": [
+              "product/deadbeef"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "missing"
+        ]
+      },
+      "DeviceListItemResponse": {
+        "type": "object",
+        "description": "One push device registered to the caller.\n\nThe raw token is deliberately absent — see ``token_fingerprint``.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Device registration id, for DELETE devices/by-id/{id}/",
+            "example": 42
+          },
+          "token_fingerprint": {
+            "type": "string",
+            "description": "SHA-256 of the device token, hex — hash your own token to find this device",
+            "example": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Device platform",
+            "example": "ios"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "False once the push provider rejected this token — registered, but no longer delivered to",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of the first registration",
+            "example": "2026-03-17T10:30:00Z"
+          },
+          "last_seen": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of the last registration of this token",
+            "example": "2026-03-18T08:02:11Z"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "is_active",
+          "last_seen",
+          "platform",
+          "token_fingerprint"
         ]
       },
       "DeviceTokenRequest": {
@@ -16233,6 +16867,12 @@
             "type": "string",
             "description": "ISO 8601 timestamp",
             "example": "2026-03-17T10:30:00Z"
+          },
+          "read_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 timestamp the recipient marked this read, or null while it is unread",
+            "example": "2026-03-17T11:04:52Z"
           }
         },
         "required": [
@@ -16242,6 +16882,43 @@
           "id",
           "notification_type",
           "title"
+        ]
+      },
+      "FeedReadRequest": {
+        "type": "object",
+        "description": "Mark feed rows read. Send exactly one of ``ids`` or ``all``.",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Feed item ids to mark read — the ids from GET feed/. Ignored when `all` is true"
+          },
+          "all": {
+            "type": "boolean",
+            "description": "Mark every unread row of the caller's feed read"
+          }
+        }
+      },
+      "FeedReadResponse": {
+        "type": "object",
+        "description": "What the mark-as-read write actually changed.",
+        "properties": {
+          "marked": {
+            "type": "integer",
+            "description": "Rows this call moved from unread to read — 0 on a repeat of the same call",
+            "example": 3
+          },
+          "unread_count": {
+            "type": "integer",
+            "description": "The caller's unread rows remaining after the write"
+          }
+        },
+        "required": [
+          "marked",
+          "unread_count"
         ]
       },
       "FigmaRemoveRefRequest": {
@@ -16827,7 +17504,7 @@
           "file": {
             "type": "string",
             "format": "uri",
-            "description": "The file to upload. Images: jpg, jpeg, png, gif, webp, bmp, heic, heif. Videos: mp4, webm, mov, avi, mkv."
+            "description": "The file to upload. Images: jpg, jpeg, png, gif, webp, avif, heic, heif. Videos: mp4, webm, mov, avi, mkv."
           }
         },
         "required": [
@@ -18667,6 +19344,10 @@
             "nullable": true,
             "description": "Whether this member was PROVEN to hold a strong second factor — true, false, or null for \"nobody has asked yet\". Under a require_mfa policy the null is what an administrator acts on: those members are not admitted until the answer arrives",
             "example": true
+          },
+          "is_self": {
+            "type": "boolean",
+            "description": "Whether this row IS the caller. Server-derived — the client is never asked to compare ids it may not have. Always false on the service-to-service membership read, where the caller is a service and not a member of anything"
           }
         },
         "required": [
@@ -19160,13 +19841,18 @@
           "count": {
             "type": "integer",
             "description": "Number of items in current page"
+          },
+          "unread_count": {
+            "type": "integer",
+            "description": "Unread rows in the caller's whole feed — not just this page."
           }
         },
         "required": [
           "items",
           "has_next",
           "has_prev",
-          "count"
+          "count",
+          "unread_count"
         ]
       },
       "PaginatedInvitationResponseList": {
@@ -19895,6 +20581,17 @@
         "properties": {
           "role": {
             "type": "string"
+          }
+        }
+      },
+      "PatchedPasskeyRename": {
+        "type": "object",
+        "description": "Body of ``PATCH /passkey/{id}/`` — the label, and nothing else.\n\n``device_name`` was writable exactly once, at register-complete, so a user\nwho accepted the browser's default (or mistyped) was stuck with it. Only\nthe label is writable here: the credential's identity (``id``,\n``credential_id``, ``aaguid``, ``transports``) is what the authenticator\nattested, and its history (``created_at``, ``last_used_at``,\n``sign_count``) is what the server observed — neither is the client's to\nedit, so neither is in this serializer.",
+        "properties": {
+          "device_name": {
+            "type": "string",
+            "description": "Human-readable label for this credential, e.g. \"Work laptop\".",
+            "maxLength": 100
           }
         }
       },
@@ -22098,6 +22795,86 @@
           "expires_in",
           "qr_uri",
           "secret"
+        ]
+      },
+      "TextTranslationRequest": {
+        "type": "object",
+        "description": "Request body of ``POST translate/api/v1/text/``.\n\nTwo shapes over one endpoint: ``text`` for a single string (a listing\ndescription a viewer wants to read), ``texts`` for a batch of short ones\n(a screen's worth of UI copy, translated together so the tone matches).\nExactly one of them; the length ceilings live in ``text.check_bounds``\nso both shapes are bounded by the same numbers and refuse with the same\nerror codes.",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "A single text to translate. Mutually exclusive with `texts`."
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Several short texts to translate in one call, order preserved. Mutually exclusive with `text`."
+          },
+          "target_lang": {
+            "type": "string",
+            "description": "Language code to translate into; must be a configured language."
+          },
+          "source_lang": {
+            "type": "string",
+            "description": "Language code the texts are written in. Defaults to STAPEL_TRANSLATE['DEFAULT_LANGUAGE']."
+          },
+          "context": {
+            "type": "string",
+            "description": "Free-text context/domain hint ('a car listing title', 'legal copy'). Rides into the prompt and is part of the cache key."
+          }
+        },
+        "required": [
+          "target_lang"
+        ]
+      },
+      "TextTranslationResult": {
+        "type": "object",
+        "description": "Content translation of one text or a batch of them (POST text/).",
+        "properties": {
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Translations, in the order the texts were given",
+            "example": [
+              "Hola"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "description": "First translation — the answer of the single-text form",
+            "example": "Hola"
+          },
+          "source_language": {
+            "type": "string",
+            "description": "Source language, as given or defaulted",
+            "example": "en"
+          },
+          "target_language": {
+            "type": "string",
+            "description": "Language the texts were translated into",
+            "example": "es"
+          },
+          "provider": {
+            "type": "string",
+            "description": "Class name of the configured LLM provider",
+            "example": "AgentProvider"
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether every returned text came from the cache"
+          }
+        },
+        "required": [
+          "cached",
+          "provider",
+          "source_language",
+          "target_language",
+          "text",
+          "texts"
         ]
       },
       "TokenIntrospectRequest": {
