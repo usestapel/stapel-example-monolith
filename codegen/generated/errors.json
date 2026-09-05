@@ -16,6 +16,14 @@
     "owner": "stapel_billing"
   },
   {
+    "code": "error.400.attribution_invalid",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "The attribution object is malformed. Expected {click_id, click_id_type: gclid|gbraid|wbraid, captured_at} with an optional utm object.",
+    "owner": "stapel_auth"
+  },
+  {
     "code": "error.400.avatar_gravatar_hash",
     "status": 400,
     "params": [],
@@ -311,6 +319,16 @@
     ],
     "remediation": "fix_input",
     "en": "Invalid format for {feature}",
+    "owner": "stapel_attributes"
+  },
+  {
+    "code": "error.400.feature_invalid_rules",
+    "status": 400,
+    "params": [
+      "feature"
+    ],
+    "remediation": "fix_input",
+    "en": "Invalid rules for {feature}",
     "owner": "stapel_attributes"
   },
   {
@@ -1395,6 +1413,16 @@
     "remediation": "retry",
     "en": "Listing not found",
     "owner": "stapel_core"
+  },
+  {
+    "code": "error.404.categories_slug_not_found",
+    "status": 404,
+    "params": [
+      "slug"
+    ],
+    "remediation": "retry",
+    "en": "No category with slug '{slug}'",
+    "owner": "stapel_categories"
   },
   {
     "code": "error.404.change_not_found",
