@@ -184,6 +184,42 @@
     "owner": "stapel_auth"
   },
   {
+    "code": "error.400.contacts_code_expired",
+    "status": 400,
+    "params": [],
+    "remediation": "retry",
+    "en": "That code is no longer valid. Ask for a new one.",
+    "owner": "stapel_profiles"
+  },
+  {
+    "code": "error.400.contacts_invalid_code",
+    "status": 400,
+    "params": [
+      "attempts_remaining"
+    ],
+    "remediation": "fix_input",
+    "en": "Wrong code. {attempts_remaining} attempt(s) left.",
+    "owner": "stapel_profiles"
+  },
+  {
+    "code": "error.400.contacts_invalid_phone",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Enter the phone number in international form, starting with +",
+    "owner": "stapel_profiles"
+  },
+  {
+    "code": "error.400.contacts_invalid_policy",
+    "status": 400,
+    "params": [
+      "policies"
+    ],
+    "remediation": "fix_input",
+    "en": "Unknown visibility policy. Allowed here: {policies}",
+    "owner": "stapel_profiles"
+  },
+  {
     "code": "error.400.credentials_required",
     "status": 400,
     "params": [],
@@ -1243,6 +1279,14 @@
     "owner": "stapel_auth"
   },
   {
+    "code": "error.403.contacts_registration_required",
+    "status": 403,
+    "params": [],
+    "remediation": "reauthenticate",
+    "en": "Register an account to see a seller's phone number",
+    "owner": "stapel_profiles"
+  },
+  {
     "code": "error.403.forbidden",
     "status": 403,
     "params": [],
@@ -1467,6 +1511,14 @@
     "owner": "stapel_auth"
   },
   {
+    "code": "error.404.contact_not_found",
+    "status": 404,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Contact not found",
+    "owner": "stapel_profiles"
+  },
+  {
     "code": "error.404.device_not_found",
     "status": 404,
     "params": [],
@@ -1676,6 +1728,14 @@
     "remediation": "fix_input",
     "en": "Resource already exists",
     "owner": "stapel_core"
+  },
+  {
+    "code": "error.409.contacts_duplicate",
+    "status": 409,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "You have already added this number",
+    "owner": "stapel_profiles"
   },
   {
     "code": "error.409.duplicate_webhook_event",
@@ -1922,6 +1982,26 @@
     "owner": "stapel_gdpr"
   },
   {
+    "code": "error.429.contacts_code_rate",
+    "status": 429,
+    "params": [
+      "retry_after"
+    ],
+    "remediation": "wait_and_retry",
+    "en": "Too many attempts. Try again in {retry_after} seconds.",
+    "owner": "stapel_profiles"
+  },
+  {
+    "code": "error.429.contacts_reveal_budget",
+    "status": 429,
+    "params": [
+      "retry_after"
+    ],
+    "remediation": "wait_and_retry",
+    "en": "Too many phone lookups. Try again in {retry_after} seconds.",
+    "owner": "stapel_profiles"
+  },
+  {
     "code": "error.429.invitation_grant_pending",
     "status": 429,
     "params": [
@@ -2006,6 +2086,14 @@
     "remediation": "wait_and_retry",
     "en": "The billing service is unavailable; try again later",
     "owner": "stapel_workspaces"
+  },
+  {
+    "code": "error.503.contacts_code_unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "retry",
+    "en": "The code could not be sent right now. Try again shortly.",
+    "owner": "stapel_profiles"
   },
   {
     "code": "error.503.gdpr.closure_unavailable",
