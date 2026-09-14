@@ -1113,6 +1113,22 @@
     "owner": "stapel_auth"
   },
   {
+    "code": "error.401.gdpr.closure_token_expired",
+    "status": 401,
+    "params": [],
+    "remediation": "contact_support",
+    "en": "The 30-day grace period has ended and this account can no longer be restored.",
+    "owner": "stapel_gdpr"
+  },
+  {
+    "code": "error.401.gdpr.closure_token_invalid",
+    "status": 401,
+    "params": [],
+    "remediation": "reauthenticate",
+    "en": "This closure link is not valid.",
+    "owner": "stapel_gdpr"
+  },
+  {
     "code": "error.401.invalid_credentials",
     "status": 401,
     "params": [],
@@ -1259,12 +1275,28 @@
     "owner": "stapel_gdpr"
   },
   {
+    "code": "error.403.gdpr.closure_token_scope",
+    "status": 403,
+    "params": [],
+    "remediation": "reauthenticate",
+    "en": "This closure link belongs to an earlier closure of this account.",
+    "owner": "stapel_gdpr"
+  },
+  {
     "code": "error.403.gdpr.erasure_forbidden",
     "status": 403,
     "params": [],
     "remediation": "contact_support",
     "en": "You are not allowed to request erasure of this item.",
     "owner": "stapel_gdpr"
+  },
+  {
+    "code": "error.403.grant_existing_account",
+    "status": 403,
+    "params": [],
+    "remediation": "reauthenticate",
+    "en": "This address already has an account. Sign in with it instead of using this link.",
+    "owner": "stapel_auth"
   },
   {
     "code": "error.403.last_owner_cannot_be_removed",
@@ -1756,6 +1788,14 @@
     "remediation": "fix_input",
     "en": "An organization with this slug already exists.",
     "owner": "stapel_auth"
+  },
+  {
+    "code": "error.409.subscription_not_paid",
+    "status": 409,
+    "params": [],
+    "remediation": "verify",
+    "en": "There is no paid subscription to cancel",
+    "owner": "stapel_billing"
   },
   {
     "code": "error.409.username_taken",

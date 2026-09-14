@@ -232,7 +232,7 @@
     "/auth/api/v1/dsar": {
       "get": {
         "operationId": "auth_api_v1_dsar_list",
-        "description": "Intake and queue for data-subject requests.\n\n``POST`` takes both an authenticated app request and an anonymous one\nfrom a public /privacy form — the form is the channel a regulator\nexpects to exist, and it cannot require a login. The anonymous variant\ngoes through the core's tiered captcha policy\n(``@captcha_protected``); an unconfigured captcha backend leaves the\nform open exactly as before, which is a host's decision to make.\n\n**Permissions:** `AllowAny`",
+        "description": "Intake and queue for data-subject requests.\n\n``POST`` takes both an authenticated app request and an anonymous one\nfrom a public /privacy form — the form is the channel a regulator\nexpects to exist, and it cannot require a login. The anonymous variant\ngoes through the core's tiered captcha policy\n(``@captcha_protected``); an unconfigured captcha backend leaves that\ndecorator doing nothing, which is why the door also carries a rolling\nhourly budget per caller (``stapel_gdpr.throttling``,\n``INTAKE_RATE_LIMIT_PER_HOUR``) — spent before anything is recorded or\nmailed, so a refused knock leaves no row and sends no acknowledgement.\n\n**Permissions:** `AllowAny`",
         "summary": "List data-protection requests (staff)",
         "tags": [
           "GDPR"
@@ -352,6 +352,16 @@
             "description": ""
           },
           "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -514,7 +524,7 @@
     "/auth/api/v1/email/change/delayed/cancel/": {
       "post": {
         "operationId": "auth_api_v1_email_change_delayed_cancel_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Email Change"
         ],
@@ -578,7 +588,7 @@
     "/auth/api/v1/email/change/delayed/initiate/": {
       "post": {
         "operationId": "auth_api_v1_email_change_delayed_initiate_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Email Change"
         ],
@@ -644,7 +654,7 @@
     "/auth/api/v1/email/change/delayed/status/": {
       "get": {
         "operationId": "auth_api_v1_email_change_delayed_status_retrieve",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Email Change"
         ],
@@ -683,7 +693,7 @@
     "/auth/api/v1/email/change/instant/request-new/": {
       "post": {
         "operationId": "auth_api_v1_email_change_instant_request_new_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Email Change"
         ],
@@ -746,7 +756,7 @@
     "/auth/api/v1/email/change/instant/request-old/": {
       "post": {
         "operationId": "auth_api_v1_email_change_instant_request_old_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Email Change"
         ],
@@ -799,7 +809,7 @@
     "/auth/api/v1/email/change/instant/verify-new/": {
       "post": {
         "operationId": "auth_api_v1_email_change_instant_verify_new_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Email Change"
         ],
@@ -855,7 +865,7 @@
     "/auth/api/v1/email/change/instant/verify-old/": {
       "post": {
         "operationId": "auth_api_v1_email_change_instant_verify_old_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Email Change"
         ],
@@ -910,7 +920,7 @@
     "/auth/api/v1/email/request/": {
       "post": {
         "operationId": "auth_api_v1_email_request_create",
-        "description": "Request email verification code (OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per email/device\n- If authenticated non-anonymous user requests OTP for an email already registered to another account, returns 409 Conflict\n- If the caller already has a VERIFIED email, requesting a code for a different one returns 403 `error.403.change_requires_current` — replacing a verified authenticator goes through the email change flow, which proves the current address first\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Request email verification code (OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per email/device\n- If authenticated non-anonymous user requests OTP for an email already registered to another account, returns 409 Conflict\n- If the caller already has a VERIFIED email, requesting a code for a different one returns 403 `error.403.change_requires_current` — replacing a verified authenticator goes through the email change flow, which proves the current address first\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n- `target` in the 200 body is MASKED (`u***@example.com`) — it is there to show the user which address the code went to, never to echo the address back\n- `429 error.429.rate_limit` when the 30-second cooldown or the hourly send budget is not clear yet, `422 error.422.blocked` when it IS clear but the identifier is still blocked for burning a code's attempt budget (see `POST /email/verify/`). The cooldown is checked first, so inside those 30 seconds a blocked identifier is told 429 — the two are a sequence, not a choice\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Email Auth"
         ],
@@ -959,7 +969,7 @@
                   "SuccessResponse": {
                     "value": {
                       "message": "Verification code sent successfully",
-                      "target": "user@example.com"
+                      "target": "u***@example.com"
                     },
                     "summary": "Success response"
                   }
@@ -1008,6 +1018,30 @@
             },
             "description": ""
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                },
+                "examples": {
+                  "RateLimitError": {
+                    "value": {
+                      "localizable_error": "error.429.rate_limit",
+                      "error": "Too many attempts. Try again in 1 minutes.",
+                      "params": {
+                        "retry_after": 30,
+                        "retry_after_minutes": 1,
+                        "retry_after_display": "0:30"
+                      }
+                    },
+                    "summary": "Rate limit error"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
           "500": {
             "content": {
               "application/json": {
@@ -1024,7 +1058,7 @@
     "/auth/api/v1/email/verify/": {
       "post": {
         "operationId": "auth_api_v1_email_verify_create",
-        "description": "Verify email and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new email** → REGISTERED (new account created)\n- **Unauthenticated user + existing email** → LOGGED_IN (login to existing account)\n- **Anonymous user + new email** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing email** → MERGED (anonymous merged into existing account)\n- **Authenticated user + FIRST email** → MODIFIED (user sets an email the account did not have verified)\n- **Authenticated user + a DIFFERENT email over a verified one** → 403 `error.403.change_requires_current` (use the email change flow: it proves the current email first)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user set an email, or re-verified the one already on the account\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Verify email and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new email** → REGISTERED (new account created)\n- **Unauthenticated user + existing email** → LOGGED_IN (login to existing account)\n- **Anonymous user + new email** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing email** → MERGED (anonymous merged into existing account)\n- **Authenticated user + FIRST email** → MODIFIED (user sets an email the account did not have verified)\n- **Authenticated user + a DIFFERENT email over a verified one** → 403 `error.403.change_requires_current` (use the email change flow: it proves the current email first)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user set an email, or re-verified the one already on the account\n\n**Wrong codes — 400, then 422 or 423.** Two independent limits guard this\nendpoint, and they are not interchangeable:\n\n- `400 error.400.invalid_code_attempts` (`params.attempts_remaining`) — the\n  code in the user's hands still has budget. Keep the input open.\n- `422 error.422.blocked` (`params.retry_after_minutes`) — that ONE code's own\n  budget is spent: the `OTP_MAX_ATTEMPTS`-th wrong guess (default 5) against a\n  single code destroys it and blocks the identifier for `OTP_BLOCK_DURATION`\n  (default 10 minutes). For that window every call here answers 422 — the\n  correct code included. Requesting a new code is refused too, as 429 while\n  the 30-second resend cooldown is still running and as 422 after it.\n- `423 error.423.account_locked` (`params.retry_after_minutes`) — the\n  CROSS-code failure counter crossed a tier: 5, 10 or 20 failures in a rolling\n  hour lock the identifier for 15 minutes, 1 hour and 24 hours. Only wrong\n  codes that were actually checked advance it, so this tier is reached by\n  spreading guesses over RE-REQUESTED codes; emptying one code's budget meets\n  422 first (the counter stops one short). The lock is consulted before the\n  code is, so while it stands the endpoint answers 423 without looking at the\n  code at all.\n- `503 error.503.verification_unavailable` — the store behind either limit\n  could not answer. Not a rejection: nothing was checked.\n\nA successful verification clears the cross-code counter and the lock.\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Email Auth"
         ],
@@ -1154,6 +1188,26 @@
               }
             },
             "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -1228,7 +1282,7 @@
     "/auth/api/v1/erasures/{request_id}": {
       "get": {
         "operationId": "auth_api_v1_erasures_retrieve",
-        "description": "State, receipts, obligations and `fully_erased_by` for one erasure.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "State, receipts, obligations and `fully_erased_by` for one erasure.\n\nGuests reach this on purpose: a guest session can close its own account\nand must be able to watch that erasure. What bounds them is not the gate\nbut ``erasure_visible`` — the row must be theirs, or their authority must\nbe one that could have opened it.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Get erasure status",
         "parameters": [
           {
@@ -1267,9 +1321,13 @@
                       "requested_at": "2026-08-24T09:00:00Z",
                       "due_at": "2026-09-23T09:00:00Z",
                       "fully_erased_by": "2026-10-18T09:00:00Z",
+                      "outcome": "incomplete",
                       "completed_at": "2026-08-24T09:12:00Z",
                       "grace_ends_at": "2026-09-23T09:00:00Z",
                       "unreceipted_owners": [
+                        "media"
+                      ],
+                      "unanswered_owners": [
                         "media"
                       ]
                     }
@@ -1462,7 +1520,7 @@
     "/auth/api/v1/grant/exchange/": {
       "post": {
         "operationId": "auth_api_v1_grant_exchange_create",
-        "description": "Consumes a single-use login grant (minted service-side via the auth.issue_login_grant comm function — the workspaces invitation claim flow) and issues a full JWT session. When the grant was minted with create_if_missing and no account exists for its email, a verified email account is created (status=REGISTERED instead of LOGGED_IN).\n\n**Permissions:** `AllowAny`",
+        "description": "Consumes a single-use login grant (minted service-side via the auth.issue_login_grant comm function — the workspaces invitation claim flow) and issues a full JWT session. When the grant was minted with create_if_missing and no account exists for its email, a verified email account is created (status=REGISTERED instead of LOGGED_IN).\n\nWhat an address that ALREADY has a full account gets is the deployment's AUTH_LOGIN_GRANT_EXISTING_ACCOUNTS policy: 'login' (the default, a session), 'refuse' (403 error.403.grant_existing_account) or 'step_up' (TOTPChallengeResponse, status=TOTP_REQUIRED — pass challenge_token to POST /totp/challenge/verify/).\n\n**Permissions:** `AllowAny`",
         "summary": "Exchange a login grant token for a JWT session",
         "tags": [
           "Auth"
@@ -1825,7 +1883,7 @@
     "/auth/api/v1/me/erasures": {
       "get": {
         "operationId": "auth_api_v1_me_erasures_list",
-        "description": "The caller's own erasures — the \"pending deletion\" list a UI shows.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "The caller's own erasures — the \"pending deletion\" list a UI shows.\n\nGuests reach this on purpose, and a guest's list is their own: the rows\ncome from ``own_erasures``, which is keyed on the caller's pk and has no\nparameter an id could be walked through.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "List my erasure requests",
         "tags": [
           "GDPR"
@@ -1858,9 +1916,13 @@
                         "requested_at": "2026-08-24T09:00:00Z",
                         "due_at": "2026-09-23T09:00:00Z",
                         "fully_erased_by": "2026-10-18T09:00:00Z",
+                        "outcome": "incomplete",
                         "completed_at": "2026-08-24T09:12:00Z",
                         "grace_ends_at": "2026-09-23T09:00:00Z",
                         "unreceipted_owners": [
+                          "media"
+                        ],
+                        "unanswered_owners": [
                           "media"
                         ]
                       }
@@ -3347,7 +3409,7 @@
     "/auth/api/v1/phone/change/delayed/cancel/": {
       "post": {
         "operationId": "auth_api_v1_phone_change_delayed_cancel_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Phone Change"
         ],
@@ -3411,7 +3473,7 @@
     "/auth/api/v1/phone/change/delayed/initiate/": {
       "post": {
         "operationId": "auth_api_v1_phone_change_delayed_initiate_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Phone Change"
         ],
@@ -3477,7 +3539,7 @@
     "/auth/api/v1/phone/change/delayed/status/": {
       "get": {
         "operationId": "auth_api_v1_phone_change_delayed_status_retrieve",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Phone Change"
         ],
@@ -3516,7 +3578,7 @@
     "/auth/api/v1/phone/change/instant/request-new/": {
       "post": {
         "operationId": "auth_api_v1_phone_change_instant_request_new_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Phone Change"
         ],
@@ -3579,7 +3641,7 @@
     "/auth/api/v1/phone/change/instant/request-old/": {
       "post": {
         "operationId": "auth_api_v1_phone_change_instant_request_old_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Phone Change"
         ],
@@ -3632,7 +3694,7 @@
     "/auth/api/v1/phone/change/instant/verify-new/": {
       "post": {
         "operationId": "auth_api_v1_phone_change_instant_verify_new_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Phone Change"
         ],
@@ -3688,7 +3750,7 @@
     "/auth/api/v1/phone/change/instant/verify-old/": {
       "post": {
         "operationId": "auth_api_v1_phone_change_instant_verify_old_create",
-        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly`",
+        "description": "ViewSet for authenticator (phone/email) change flows.\n\n**Permissions:** `IsAuthenticated, DenyEnrollOnly, IsNotAnonymousUser`",
         "tags": [
           "Phone Change"
         ],
@@ -3743,7 +3805,7 @@
     "/auth/api/v1/phone/request/": {
       "post": {
         "operationId": "auth_api_v1_phone_request_create",
-        "description": "Request phone verification code (SMS OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per phone/device\n- If authenticated non-anonymous user requests OTP for a phone already registered to another account, returns 409 Conflict\n- If the caller already has a VERIFIED phone, requesting a code for a different one returns 403 `error.403.change_requires_current` — replacing a verified authenticator goes through the phone change flow, which proves the current number first\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Request phone verification code (SMS OTP).\n\n**Notes:**\n- OTP codes expire after 10 minutes\n- Rate limited to 1 request per 30 seconds per phone/device\n- If authenticated non-anonymous user requests OTP for a phone already registered to another account, returns 409 Conflict\n- If the caller already has a VERIFIED phone, requesting a code for a different one returns 403 `error.403.change_requires_current` — replacing a verified authenticator goes through the phone change flow, which proves the current number first\n- Admin accounts (staff/superuser) always receive real OTP even in mock mode for security\n- `target` in the 200 body is MASKED (`+7 *** *** 12 34`) — it is there to show the user which number the code went to, never to echo the number back\n- `429 error.429.rate_limit` when the 30-second cooldown or the hourly send budget is not clear yet, `422 error.422.blocked` when it IS clear but the identifier is still blocked for burning a code's attempt budget (see `POST /phone/verify/`). The cooldown is checked first, so inside those 30 seconds a blocked identifier is told 429 — the two are a sequence, not a choice\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Phone Auth"
         ],
@@ -3792,7 +3854,7 @@
                   "SuccessResponse": {
                     "value": {
                       "message": "Verification code sent successfully",
-                      "target": "+12345678900"
+                      "target": "+1 *** *** 89 00"
                     },
                     "summary": "Success response"
                   }
@@ -3841,6 +3903,16 @@
             },
             "description": ""
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
           "500": {
             "content": {
               "application/json": {
@@ -3857,7 +3929,7 @@
     "/auth/api/v1/phone/verify/": {
       "post": {
         "operationId": "auth_api_v1_phone_verify_create",
-        "description": "Verify phone number and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new phone** → REGISTERED (new account created)\n- **Unauthenticated user + existing phone** → LOGGED_IN (login to existing account)\n- **Anonymous user + new phone** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing phone** → MERGED (anonymous merged into existing account)\n- **Authenticated user + FIRST phone** → MODIFIED (user sets a phone the account did not have verified)\n- **Authenticated user + a DIFFERENT phone over a verified one** → 403 `error.403.change_requires_current` (use the phone change flow: it proves the current phone first)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user set a phone, or re-verified the one already on the account\n\n\n**Permissions:** `DenyEnrollOnly`",
+        "description": "Verify phone number and authenticate/register.\n\n**Authentication Flows:**\n- **Unauthenticated user + new phone** → REGISTERED (new account created)\n- **Unauthenticated user + existing phone** → LOGGED_IN (login to existing account)\n- **Anonymous user + new phone** → REGISTERED (anonymous completes registration)\n- **Anonymous user + existing phone** → MERGED (anonymous merged into existing account)\n- **Authenticated user + FIRST phone** → MODIFIED (user sets a phone the account did not have verified)\n- **Authenticated user + a DIFFERENT phone over a verified one** → 403 `error.403.change_requires_current` (use the phone change flow: it proves the current phone first)\n- **Invalid/expired code** → REJECTED\n\n**Status values:**\n- `REJECTED` - Invalid code, expired code, or blocked\n- `REGISTERED` - New account created or anonymous completed registration\n- `LOGGED_IN` - Existing user logged in\n- `MERGED` - Anonymous user merged into existing account\n- `MODIFIED` - Authenticated user set a phone, or re-verified the one already on the account\n\n**Wrong codes — 400, then 422 or 423.** Two independent limits guard this\nendpoint, and they are not interchangeable:\n\n- `400 error.400.invalid_code_attempts` (`params.attempts_remaining`) — the\n  code in the user's hands still has budget. Keep the input open.\n- `422 error.422.blocked` (`params.retry_after_minutes`) — that ONE code's own\n  budget is spent: the `OTP_MAX_ATTEMPTS`-th wrong guess (default 5) against a\n  single code destroys it and blocks the identifier for `OTP_BLOCK_DURATION`\n  (default 10 minutes). For that window every call here answers 422 — the\n  correct code included. Requesting a new code is refused too, as 429 while\n  the 30-second resend cooldown is still running and as 422 after it.\n- `423 error.423.account_locked` (`params.retry_after_minutes`) — the\n  CROSS-code failure counter crossed a tier: 5, 10 or 20 failures in a rolling\n  hour lock the identifier for 15 minutes, 1 hour and 24 hours. Only wrong\n  codes that were actually checked advance it, so this tier is reached by\n  spreading guesses over RE-REQUESTED codes; emptying one code's budget meets\n  422 first (the counter stops one short). The lock is consulted before the\n  code is, so while it stands the endpoint answers 423 without looking at the\n  code at all.\n- `503 error.503.verification_unavailable` — the store behind either limit\n  could not answer. Not a rejection: nothing was checked.\n\nA successful verification clears the cross-code counter and the lock.\n\n\n**Permissions:** `DenyEnrollOnly`",
         "tags": [
           "Phone Auth"
         ],
@@ -3937,6 +4009,26 @@
             "description": ""
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5997,15 +6089,26 @@
     "/auth/api/v1/user/account/cancel-close": {
       "post": {
         "operationId": "auth_api_v1_user_account_cancel_close_create",
-        "description": "Stop a closure that is still inside its grace period.\n\nThe account is reactivated and a ``user.deletion_cancelled`` comm action\nis emitted — the mirror of the ``user.deletion_initiated`` that started\nthe closure, so every consumer that took a reversible action on the\ninitiation (suppressed notifications, hidden content, suspended\nmemberships) is told to lift it instead of waiting for its next sync.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
+        "description": "Authorized either by a live session or by the `X-Closure-Token` returned with the closure's 202 — the closure revoked every session of the account, so the token is normally the only credential the caller still holds. 401 when neither is present, when the token is not ours, or when its grace period is over; 403 when the token names an earlier closure of the same account.\n\n**Permissions:** `AllowAny`",
         "summary": "Cancel account closure during grace period",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Closure-Token",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The `closure_token` returned with the closure's 202, standing in for the session that closure revoked. Scoped to that one closure and expiring with its grace period. Send this **or** authenticate normally; sending neither is a 401."
+          }
+        ],
         "tags": [
           "GDPR"
         ],
         "security": [
           {
             "JWTCookieAuth": []
-          }
+          },
+          {}
         ],
         "responses": {
           "200": {
@@ -6019,9 +6122,30 @@
                     "value": {
                       "status": "grace",
                       "grace_ends_at": "2026-07-24T10:00:00Z",
-                      "can_cancel": true
+                      "can_cancel": true,
+                      "closure_token": "eyJjaWQiOjQyfQ:1uL9Wq:0S3n..."
                     }
                   }
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -6043,7 +6167,7 @@
     "/auth/api/v1/user/account/close": {
       "post": {
         "operationId": "auth_api_v1_user_account_close_create",
-        "description": "Starts a 30-day grace period. The account is deactivated and all of its sessions are revoked immediately. Can be cancelled by logging in during the grace period.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
+        "description": "Starts a 30-day grace period. The account is deactivated and all of its sessions are revoked immediately — including the one that made this call. The 202 therefore carries `closure_token`, a single-purpose capability for this closure: send it as the `X-Closure-Token` header to poll the status endpoint or to cancel, with no session at all. It is returned exactly once and expires with the grace period. A host whose auth backend admits deactivated users can also cancel by logging back in; Django's default backend does not, which is what the token is for.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Initiate account closure",
         "tags": [
           "GDPR"
@@ -6074,6 +6198,16 @@
             },
             "description": ""
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
           "503": {
             "content": {
               "application/json": {
@@ -6090,15 +6224,26 @@
     "/auth/api/v1/user/account/close/status": {
       "get": {
         "operationId": "auth_api_v1_user_account_close_status_retrieve",
-        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
+        "description": "Authorized either by a live session or by the `X-Closure-Token` returned with the closure's 202. The token keeps answering after the sessions are gone and while the erasure runs, until the grace period it was signed for ends.\n\n**Permissions:** `AllowAny`",
         "summary": "Get account closure status",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Closure-Token",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The `closure_token` returned with the closure's 202, standing in for the session that closure revoked. Scoped to that one closure and expiring with its grace period. Send this **or** authenticate normally; sending neither is a 401."
+          }
+        ],
         "tags": [
           "GDPR"
         ],
         "security": [
           {
             "JWTCookieAuth": []
-          }
+          },
+          {}
         ],
         "responses": {
           "200": {
@@ -6112,9 +6257,30 @@
                     "value": {
                       "status": "grace",
                       "grace_ends_at": "2026-07-24T10:00:00Z",
-                      "can_cancel": true
+                      "can_cancel": true,
+                      "closure_token": "eyJjaWQiOjQyfQ:1uL9Wq:0S3n..."
                     }
                   }
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
                 }
               }
             },
@@ -6244,6 +6410,16 @@
               }
             },
             "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
           }
         }
       }
@@ -6251,7 +6427,7 @@
     "/auth/api/v1/user/data-export/status": {
       "get": {
         "operationId": "auth_api_v1_user_data_export_status_retrieve",
-        "description": "Base view exposing serializer seams.\n\nEvery concrete view declares ``request_serializer_class`` /\n``response_serializer_class`` (``None`` when that direction carries no\nserialized payload). Subclasses may swap either class attribute — or\noverride the getters — to customize the request/response envelopes\nwithout rewriting the method bodies.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
+        "description": "The caller's own latest export — guests included, same as opening one.\n\n**Permissions:** `IsAuthenticated, AccountNotClosed`",
         "summary": "Get data export status",
         "tags": [
           "GDPR"
@@ -6874,7 +7050,7 @@
     "/billing/api/v1/subscription/cancel": {
       "post": {
         "operationId": "billing_api_v1_subscription_cancel_create",
-        "description": "Cancel the authenticated user's subscription. Cancels the subscription at the Stripe provider (when one exists) and marks it cancelled locally. Takes no request body.\n\n**Permissions:** `IsAuthenticated`",
+        "description": "Cancel the authenticated user's subscription at the provider. The subscription stays active until the end of the period already paid for: the response carries `cancel_at_period_end: true` and the `current_period_end` it runs to. Refused with `error.409.subscription_not_paid` when there is no paid subscription (`is_paid: false`) — the free plan is not a subscription and has nothing to cancel. Takes no request body.\n\n**Permissions:** `IsAuthenticated`",
         "tags": [
           "Subscription"
         ],
@@ -6895,6 +7071,16 @@
             "description": ""
           },
           "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
             "content": {
               "application/json": {
                 "schema": {
@@ -7388,7 +7574,7 @@
     "/categories/api/v1/categories/{id}/children/": {
       "get": {
         "operationId": "categories_api_v1_categories_children_list",
-        "description": "Get all non-deleted children of this category, sorted by tn_priority descending.\n\n**Permissions:** `ReadOnlyOrStaff`",
+        "description": "The level below this category, in the order a storefront draws it. Three kinds of entry, and a client that renders the first renders the others with no new code: a real child; a POINTER into another branch (`linked: true`, every other key the target's); and, on a category with `children_expand_by`, a VIRTUAL value (`virtual: true`, no id and no slug — a `filter` pair the client turns into its own filter URL on THIS category).\n\n**Permissions:** `ReadOnlyOrStaff`",
         "parameters": [
           {
             "in": "path",
@@ -7415,7 +7601,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Category"
+                    "$ref": "#/components/schemas/CategoryChild"
                   }
                 }
               }
@@ -7668,6 +7854,150 @@
                   "items": {
                     "$ref": "#/components/schemas/FeatureEffective"
                   }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/categories/api/v1/categories/{id}/links/": {
+      "get": {
+        "operationId": "categories_api_v1_categories_links_list",
+        "description": "The pointers drawn among this category's children. Staff only: the public reads serve the ASSEMBLED child list, and the table behind it is operator bookkeeping.\n\n**Permissions:** `IsStaffUser`",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "A unique integer value identifying this category.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryLink"
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "categories_api_v1_categories_links_create",
+        "description": "Create a pointer from this category to another. `order` is its position among the children; `external_source` says who authored it — an operator's own links use `storefront` and survive every catalogue reload.\n\n**Permissions:** `IsStaffUser`",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "A unique integer value identifying this category.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "Categories"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryLink"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryLink"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryLink"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryLink"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/categories/api/v1/categories/{id}/links/{target_pk}/": {
+      "delete": {
+        "operationId": "categories_api_v1_categories_links_destroy",
+        "description": "Delete the pointer from this category to `target_pk`. Deleting a pointer deletes nothing else: the target keeps its own place in the tree.\n\n**Permissions:** `IsStaffUser`",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "A unique integer value identifying this category.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_pk",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
                 }
               }
             },
@@ -7984,7 +8314,7 @@
     "/categories/api/v1/categories/by-slug/{slug}/": {
       "get": {
         "operationId": "categories_api_v1_categories_by_slug_retrieve",
-        "description": "Retrieve one category by its slug. `slug` is unique, so this is an alternate primary key, not a search.\n\n**Permissions:** `ReadOnlyOrStaff`",
+        "description": "Retrieve one category by its slug. `slug` is unique, so this is an alternate primary key, not a search. A slug the category USED to carry (renamed since) answers 301 to the current one.\n\n**Permissions:** `ReadOnlyOrStaff`",
         "parameters": [
           {
             "in": "path",
@@ -8013,6 +8343,9 @@
               }
             },
             "description": ""
+          },
+          "301": {
+            "description": "No response body"
           },
           "404": {
             "content": {
@@ -9250,6 +9583,143 @@
         }
       }
     },
+    "/cdn/api/v1/upload/audio/": {
+      "post": {
+        "operationId": "upload_audio",
+        "description": "Upload a voice recording (chat voice message, call note).\n\n**Supported formats:** WebM, Ogg, Opus, M4A, MP3, WAV, FLAC, AAC\n(`STAPEL_CDN[\"ALLOWED_AUDIO_EXTENSIONS\"]`). WebM/Opus is what a browser's\n`MediaRecorder` produces, so it is the shape a chat client sends by default.\n\n**What happens on upload:**\n1. Size cap, extension allowlist and byte sniff run BEFORE the body is hashed\n2. File hash (SHA-256) is calculated for deduplication\n3. If the caller already holds these bytes, the existing recording is\n   returned (200 OK) and nothing new is stored\n4. Otherwise the recording is stored **as-is** — passthrough, no transcode —\n   and is immediately playable from `original_url`\n\n**Store `ref` (`audio/<hash>`)**, not the numeric id: it is the handle\n`cdn.describe` / `POST /describe/` resolve, and what a chat message carries.\n\n**`duration` and `preview_b64` are filled in asynchronously.** The waveform\nstrip (ffmpeg `showwavespic`) and the measured duration (ffprobe) are\nproduced by a background pass, so the 201 that creates the row carries\n`duration: null` and an empty `preview_b64`. That is not a broken upload:\nthe recording is already playable. Re-read the ref through `/describe/`\n(or this response's `render_meta.meta_status`) to pick the waveform up. A\ndeployment with no ffmpeg leaves both empty forever, with the reason named\nin `render_meta.meta_reason` rather than a fabricated zero.\n\n**Request format:** `multipart/form-data` with `file` field\n\n**Maximum file size:** `STAPEL_CDN[\"MAX_AUDIO_SIZE\"]`, 50MB by default.\nEnforced before the body is hashed; over it the answer is 413.\n\n**Quota:** recordings count towards the per-owner object and byte ceilings\n(`MAX_OBJECTS_PER_OWNER` / `MAX_BYTES_PER_OWNER`) like every other stored\nobject; over them the answer is 403.\n\n\n**Permissions:** `IsNotAnonymousUser`",
+        "summary": "Upload an audio recording",
+        "tags": [
+          "Audio"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Audio recording to upload (webm, ogg, opus, m4a, mp3, wav, flac, aac)"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTCookieAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioUploadResponse"
+                },
+                "examples": {
+                  "RecordingStored": {
+                    "value": {
+                      "message": "Audio uploaded successfully",
+                      "audio": {
+                        "id": 12,
+                        "ref": "audio/a1b2c3d4e5f6...",
+                        "file_hash": "a1b2c3d4e5f6...",
+                        "original_filename": "voice.webm",
+                        "file_extension": ".webm",
+                        "original_size": 18324,
+                        "duration": null,
+                        "preview_b64": "",
+                        "is_compressed": false
+                      }
+                    },
+                    "summary": "Recording stored"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioUploadResponse"
+                },
+                "examples": {
+                  "AudioAlreadyExists": {
+                    "value": {
+                      "message": "Audio already exists",
+                      "audio": {
+                        "id": 12,
+                        "ref": "audio/a1b2c3d4e5f6..."
+                      }
+                    },
+                    "summary": "Audio already exists"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StapelError"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/cdn/api/v1/upload/avatar/": {
       "post": {
         "operationId": "upload_avatar",
@@ -10073,7 +10543,8 @@
                       "followers_count": 120,
                       "following_count": 30,
                       "relationship_status": "following",
-                      "seller_type": "business"
+                      "seller_type": "business",
+                      "created_at": "2025-01-15T12:00:00Z"
                     }
                   }
                 }
@@ -14334,6 +14805,226 @@
           }
         }
       },
+      "Audio": {
+        "type": "object",
+        "description": "Serializer for the Audio model (voice recordings).\n\nA recording has no variant ladder and no picture geometry, so this is\ndeliberately much shorter than :class:`VideoSerializer`: the render\ncontract of a voice message is ``duration`` plus the waveform strip, and\nboth live in ``render_meta`` (``duration_ms`` + ``preview_b64``) as well\nas on their own fields.\n\n``ref`` is the field a consumer actually stores. Everything else here is\na view of one row; ``audio/<hash>`` is the durable handle that\n``cdn.describe`` / ``POST /describe/`` resolve later, and a chat message\nkeeps that string rather than a numeric id.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "ref": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Durable media reference: audio/<hash>. Store THIS."
+          },
+          "file_hash": {
+            "type": "string",
+            "readOnly": true,
+            "description": "SHA-256 hash of the original file"
+          },
+          "original_filename": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "file_extension": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "mime_type": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "original_size": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "File size in bytes"
+          },
+          "duration": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true,
+            "nullable": true,
+            "description": "Duration in seconds"
+          },
+          "preview_b64": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Inline waveform strip: data:image/webp;base64,..."
+          },
+          "original_url": {
+            "type": "string",
+            "format": "uri",
+            "readOnly": true,
+            "description": "URL to the stored recording (always passthrough — no transcode)."
+          },
+          "render_meta": {
+            "type": "object",
+            "description": "cdn.describe snapshot for this recording (see RenderMeta).",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "nullable": true,
+                "description": "Open media-kind registry (STAPEL_CDN['MEDIA_KINDS']): image, gif, video, audio, file, or a host-defined kind."
+              },
+              "mime": {
+                "type": "string"
+              },
+              "ext": {
+                "type": "string",
+                "description": "Lowercase, dot-prefixed."
+              },
+              "bytes": {
+                "type": "integer"
+              },
+              "width": {
+                "type": "integer",
+                "nullable": true
+              },
+              "height": {
+                "type": "integer",
+                "nullable": true
+              },
+              "aspect": {
+                "type": "number",
+                "format": "float",
+                "nullable": true,
+                "description": "width / height, 6dp."
+              },
+              "square": {
+                "type": "boolean"
+              },
+              "animated": {
+                "type": "boolean"
+              },
+              "duration_ms": {
+                "type": "integer",
+                "nullable": true
+              },
+              "preview_b64": {
+                "type": "string",
+                "nullable": true,
+                "description": "data:image/webp;base64,... bounded by STAPEL_CDN['MICRO_PREVIEW_MAX_BYTES']; null when refused or not generated, with meta_reason saying which."
+              },
+              "preview_kind": {
+                "type": "string",
+                "enum": [
+                  "blur",
+                  "poster",
+                  "waveform"
+                ],
+                "nullable": true
+              },
+              "poster_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "meta_status": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "partial",
+                  "missing"
+                ]
+              },
+              "meta_reason": {
+                "type": "string",
+                "nullable": true,
+                "description": "stapel_cdn.metadata.REASONS; null when ok."
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "required": [
+              "ref",
+              "mime",
+              "ext",
+              "bytes",
+              "meta_status"
+            ],
+            "readOnly": true
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of references: service/entity_type/entity_id"
+          },
+          "is_compressed": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Whether ffmpeg-audio compression has run (opt-in submodule)"
+          },
+          "uploaded_by": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "nullable": true
+          },
+          "uploaded_by_username": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "created_at",
+          "duration",
+          "file_extension",
+          "file_hash",
+          "id",
+          "is_compressed",
+          "original_filename",
+          "original_size",
+          "original_url",
+          "preview_b64",
+          "ref",
+          "render_meta",
+          "updated_at",
+          "uploaded_by",
+          "uploaded_by_username"
+        ]
+      },
+      "AudioUploadResponse": {
+        "type": "object",
+        "description": "Successful audio (voice recording) upload.",
+        "properties": {
+          "audio": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Audio"
+              }
+            ],
+            "description": "Uploaded recording object (serialized by AudioSerializer)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Confirmation message",
+            "example": "Audio uploaded successfully"
+          }
+        },
+        "required": [
+          "audio",
+          "message"
+        ]
+      },
       "AuditEventResponse": {
         "type": "object",
         "description": "One line of a workspace's membership history.",
@@ -14503,6 +15194,14 @@
               }
             ],
             "description": "Server-authoritative OTP parameters (code lengths, ttl, resend"
+          },
+          "posture": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PostureInfo"
+              }
+            ],
+            "description": "The declared deployment posture and its stage (PostureInfo)"
           }
         },
         "required": [
@@ -14510,6 +15209,7 @@
           "methods",
           "mfa",
           "otp",
+          "posture",
           "registration"
         ]
       },
@@ -14646,6 +15346,33 @@
         "type": "string",
         "description": "* `file` - File\n* `url` - URL\n* `gravatar` - Gravatar\n* `cdn` - CDN"
       },
+      "AxisRoleAuthoredE96Enum": {
+        "enum": [
+          "make",
+          "model",
+          "generation",
+          "year",
+          "mileage"
+        ],
+        "type": "string",
+        "description": "* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage"
+      },
+      "AxisRoleEnum": {
+        "enum": [
+          "make",
+          "model",
+          "generation",
+          "year",
+          "mileage"
+        ],
+        "type": "string",
+        "description": "* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage"
+      },
+      "BlankEnum": {
+        "enum": [
+          ""
+        ]
+      },
       "BoolConfig": {
         "type": "object",
         "description": "Serializer for boolean feature configuration.",
@@ -14724,7 +15451,7 @@
           },
           "slug": {
             "type": "string",
-            "maxLength": 100
+            "maxLength": 255
           },
           "catalog_icon": {
             "type": "string",
@@ -14761,6 +15488,16 @@
             "type": "string",
             "readOnly": true,
             "description": "Name of the axis the children split on, for a `chips` row (e.g. a key rendering as 'Condition' over New | Used). A translation key, like `name` — empty when nobody named it."
+          },
+          "children_axis_tag": {
+            "type": "string",
+            "readOnly": true,
+            "description": "External tag of the field the children enumerate (e.g. `operation_type`) — the source catalogue's own identifier, NOT a translation key. It is how a client recognises that this level and an ordinary feature elsewhere in the tree are the same question. Empty when nobody named it."
+          },
+          "children_expand_by": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Slug of the feature whose values ARE this category's children. When set, `GET /children/` answers with virtual children (each a `{feature: value}` filter on this category) and `children_pks` is empty — there are no rows. Empty for every ordinary node."
           },
           "children_pks": {
             "type": "array",
@@ -14819,7 +15556,9 @@
         "required": [
           "children_as",
           "children_axis_label",
+          "children_axis_tag",
           "children_count",
+          "children_expand_by",
           "children_pks",
           "features",
           "id",
@@ -14843,7 +15582,7 @@
           },
           "slug": {
             "type": "string",
-            "maxLength": 100
+            "maxLength": 255
           },
           "external_id": {
             "type": "string",
@@ -14907,6 +15646,19 @@
           "categories"
         ]
       },
+      "CategoryChild": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Category"
+          },
+          {
+            "$ref": "#/components/schemas/CategoryLinkedChild"
+          },
+          {
+            "$ref": "#/components/schemas/CategoryVirtualChild"
+          }
+        ]
+      },
       "CategoryCommand": {
         "type": "object",
         "description": "Serializer for category command pattern.",
@@ -14951,6 +15703,189 @@
           "command"
         ]
       },
+      "CategoryLink": {
+        "type": "object",
+        "description": "Staff read/write of one pointer between two categories.\n\n``source`` is the URL's category, so it is never in the body. ``target``\nis a category id; ``external_source`` says who authored the link and is\nwhat a catalogue reload keys its rewrite on — an operator's own links\ncarry ``storefront`` and survive every import.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "target": {
+            "type": "integer",
+            "description": "The category the pointer leads to."
+          },
+          "target_slug": {
+            "type": "string",
+            "readOnly": true
+          },
+          "target_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "order": {
+            "type": "integer",
+            "maximum": 9223372036854775807,
+            "minimum": 0,
+            "format": "int64",
+            "description": "Position among the source's children — the pointer is inserted at this index into the child list, not appended after it."
+          },
+          "label": {
+            "type": "string",
+            "description": "Text drawn on the pointer — a translation key, like `name`. Empty means the target's own name.",
+            "maxLength": 200
+          },
+          "external_source": {
+            "type": "string",
+            "description": "Who created this link: an importer's name, or `storefront` for an operator's own. A catalogue reload rewrites only the links carrying the source it loads.",
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "id",
+          "target",
+          "target_name",
+          "target_slug"
+        ]
+      },
+      "CategoryLinkedChild": {
+        "type": "object",
+        "description": "A POINTER among a category's children — the target, marked as one.\n\nEvery key is the target's, so a client that already renders a child\nrenders this one with no new code: the address it navigates to, the\nbreadcrumbs it draws and the listings it counts all belong to the node\nthe pointer leads to. Two keys are the pointer's own: ``linked``, which\nsays not to treat this as a child of the category being listed, and\n``name``, which is the link's label when it carries one.",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "catalog_icon": {
+            "type": "string",
+            "description": "CDN catalog icon reference (opaque string, e.g. catalog/asset-name)",
+            "maxLength": 255
+          },
+          "carousel_icon": {
+            "type": "string",
+            "description": "CDN carousel icon reference (opaque string, e.g. carousel/asset-name)",
+            "maxLength": 255
+          },
+          "carousel_enabled": {
+            "type": "boolean",
+            "description": "Whether this category appears in the carousel"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether this category is active"
+          },
+          "children_as": {
+            "description": "How this category's children are presented: `tiles` (real subcategories), `chips` (a partition of one attribute template) or `transparent` (browsing skips this node — its children appear where it would, and its own page is its parent's). `null` when the category has no children. The authoring value `auto` is resolved server-side and never appears here.",
+            "nullable": true,
+            "readOnly": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ChildrenAsEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "children_axis_label": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Name of the axis the children split on, for a `chips` row (e.g. a key rendering as 'Condition' over New | Used). A translation key, like `name` — empty when nobody named it."
+          },
+          "children_axis_tag": {
+            "type": "string",
+            "readOnly": true,
+            "description": "External tag of the field the children enumerate (e.g. `operation_type`) — the source catalogue's own identifier, NOT a translation key. It is how a client recognises that this level and an ordinary feature elsewhere in the tree are the same question. Empty when nobody named it."
+          },
+          "children_expand_by": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Slug of the feature whose values ARE this category's children. When set, `GET /children/` answers with virtual children (each a `{feature: value}` filter on this category) and `children_pks` is empty — there are no rows. Empty for every ordinary node."
+          },
+          "children_pks": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "readOnly": true,
+            "description": "Ids of the children a reader can see — exactly what `GET /categories/{id}/children/` returns, in the same order. Read this, not `tn_children_pks`: that is django-treenode's raw structure column and it counts soft-deleted and retired rows too, so a rule built on it (leaf-ness, child counts, a one-child wrapper check) sees children no reader can fetch."
+          },
+          "children_count": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "How many children a reader can see — `len(children_pks)`."
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "readOnly": true
+          },
+          "translatable": {
+            "type": "boolean",
+            "description": "If True, category name is a translation key"
+          },
+          "tn_parent": {
+            "type": "integer",
+            "nullable": true,
+            "title": "Parent"
+          },
+          "tn_priority": {
+            "type": "integer",
+            "maximum": 9999999999,
+            "minimum": 0,
+            "format": "int64",
+            "title": "Priority"
+          },
+          "tn_ancestors_pks": {
+            "type": "string",
+            "readOnly": true,
+            "title": "Ancestors pks"
+          },
+          "tn_children_pks": {
+            "type": "string",
+            "readOnly": true,
+            "description": "django-treenode's raw structure column, `,`-joined. Counts soft-deleted and retired rows, so it is NOT the child set a reader can fetch — use `children_pks`. Kept because the revision-sync feed's consumers mirror the tree columns."
+          },
+          "revision": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "linked": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Always `true`. This node is drawn here but lives elsewhere in the tree — `id`, `slug` and `tn_parent` are the target's."
+          }
+        },
+        "required": [
+          "children_as",
+          "children_axis_label",
+          "children_axis_tag",
+          "children_count",
+          "children_expand_by",
+          "children_pks",
+          "features",
+          "id",
+          "linked",
+          "name",
+          "revision",
+          "slug",
+          "tn_ancestors_pks",
+          "tn_children_pks"
+        ]
+      },
       "CategoryStaff": {
         "type": "object",
         "description": "The public projection plus provenance — staff writes only.\n\n``create``/``update``/``partial_update`` are gated by ``ReadOnlyOrStaff``,\nand an operator hand-fixing an imported row legitimately needs to see and\nset ``external_id``/``external_source`` (re-pointing a row at its source\nnode is how a botched match is repaired). Extending the public class keeps\nthe two projections structurally one serializer: a field added to the\npublic set is automatically part of this one, and this one can never lose\na public field silently.\n\n``children_as_authored`` is the same split, one field further: the\ninherited ``children_as`` stays the RESOLVED read (an operator wants to\nsee what a visitor sees), and the raw authoring column — ``auto``\nincluded — gets its own key, writable. Without it \"an authored value wins\nover derivation\" would be reachable only from the admin or a DB console.\n``children_as_derived`` rides along read-only so an operator can tell an\ninherited decision from their own.",
@@ -14965,7 +15900,7 @@
           },
           "slug": {
             "type": "string",
-            "maxLength": 100
+            "maxLength": 255
           },
           "catalog_icon": {
             "type": "string",
@@ -15001,6 +15936,14 @@
           "children_axis_label": {
             "type": "string",
             "maxLength": 200
+          },
+          "children_axis_tag": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "children_expand_by": {
+            "type": "string",
+            "maxLength": 100
           },
           "children_pks": {
             "type": "array",
@@ -15128,6 +16071,29 @@
             "type": "string",
             "description": "Name of the axis the children split on, for a `chips` row. A translation key, like `name`; empty when nobody named it."
           },
+          "children_axis_tag": {
+            "type": "string",
+            "description": "External tag of the field the children enumerate — the source catalogue's own identifier, not a translation key. Empty when nobody named it."
+          },
+          "linked": {
+            "type": "boolean",
+            "description": "Present and `true` on a POINTER: this node is drawn among its parent's children but lives elsewhere in the tree. Its `id`, `slug` and `path` are the target's, so following it lands on the target's own page; only `name` may be the pointer's."
+          },
+          "virtual": {
+            "type": "boolean",
+            "description": "Present and `true` on a value of an expanded branch (the parent's `children_expand_by`). Such a node has no `id`, no `slug` and no `path` — it carries `name`, `value` and a `filter` object the client turns into its own filter URL on the PARENT category."
+          },
+          "value": {
+            "type": "string",
+            "description": "Virtual nodes only: the option code this node stands for."
+          },
+          "filter": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Virtual nodes only: the `{feature_slug: value}` pair that selects this node's listings on the parent category."
+          },
           "children_count": {
             "type": "integer",
             "description": "How many children this node HAS — live rows only, so it counts no soft-deleted or retired row. Not `len(children)`: at the requested depth `children` is empty and this still says whether there is another level to ask for."
@@ -15146,11 +16112,43 @@
           "children",
           "children_as",
           "children_axis_label",
+          "children_axis_tag",
           "children_count",
           "id",
           "name",
           "path",
           "slug"
+        ]
+      },
+      "CategoryVirtualChild": {
+        "type": "object",
+        "description": "One value of an expanded branch — a child with no row behind it.\n\nEmitted where the parent carries ``children_expand_by``. There is no\n``id`` and no ``slug`` because there is nothing to address; the address\nis the client's own filter URL on the PARENT category, built from\n``filter``.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display label of the value — a translation key, like `name`."
+          },
+          "value": {
+            "type": "string",
+            "description": "The option code this node stands for."
+          },
+          "virtual": {
+            "type": "boolean",
+            "description": "Always `true`."
+          },
+          "filter": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The `{feature_slug: value}` pair that selects this node's listings on the parent category."
+          }
+        },
+        "required": [
+          "filter",
+          "name",
+          "value",
+          "virtual"
         ]
       },
       "CheckoutRequest": {
@@ -15243,6 +16241,12 @@
             "type": "boolean",
             "description": "Whether the closure can still be cancelled",
             "example": true
+          },
+          "closure_token": {
+            "type": "string",
+            "nullable": true,
+            "description": "Single-purpose capability for polling and cancelling THIS closure after its sessions were revoked — present only on the 202 that starts the closure, null everywhere else. Store it and send it as the X-Closure-Token header; it expires with the grace period",
+            "example": "eyJjaWQiOjQyfQ:1uL9Wq:0S3n..."
           }
         },
         "required": [
@@ -16184,6 +17188,10 @@
             "example": {
               "recordings": 3
             }
+          },
+          "unanswered": {
+            "type": "boolean",
+            "description": "Whether this owner never answered at all — still waiting, or timed out in silence. A failed part answered; this one did not"
           }
         },
         "required": [
@@ -16242,6 +17250,11 @@
             "description": "ISO datetime every subprocessor window has also closed",
             "example": "2026-10-18T09:00:00Z"
           },
+          "outcome": {
+            "type": "string",
+            "description": "What the report may say — pending, complete, or incomplete. Never complete while an owner is unanswered or completeness was waived",
+            "example": "incomplete"
+          },
           "completed_at": {
             "type": "string",
             "nullable": true,
@@ -16274,6 +17287,16 @@
               "type": "string"
             },
             "description": "Owners still blocking completion",
+            "example": [
+              "media"
+            ]
+          },
+          "unanswered_owners": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Owners that never answered — the subset that went silent rather than reporting a failure",
             "example": [
               "media"
             ]
@@ -16473,6 +17496,34 @@
             ],
             "description": "What to translate: 'all' = title + options, 'title' = title only, 'none' = nothing\n\n* `all` - All (title + options)\n* `title` - Title only\n* `none` - None"
           },
+          "axis_role": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Which classified axis this feature IS — `make`, `model`, `generation`, `year`, `mileage` — or null. Authored value first, then the loader's derivation.\n\n* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AxisRoleEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "axis_role_authored": {
+            "description": "The authoring column: blank leaves the role to `load_catalog`'s slug-table derivation, a value pins it. `axis_role` above is the RESOLVED read.\n\n* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AxisRoleAuthoredE96Enum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "axis_role_derived": {
+            "type": "string",
+            "readOnly": true
+          },
           "rules": {
             "description": "Conditional rules (closed grammar). Validated by stapel-attributes."
           },
@@ -16531,6 +17582,8 @@
           }
         },
         "required": [
+          "axis_role",
+          "axis_role_derived",
           "config",
           "id",
           "name",
@@ -16681,6 +17734,22 @@
             "description": "Form section; sections order by first appearance.",
             "maxLength": 100
           },
+          "axis_role": {
+            "description": "Which classified axis this feature IS, when it is one: `make`, `model`, `generation`, `year`, `mileage`. Blank (the default) for the overwhelming majority of features, which describe an object rather than organise it. An authored value wins over the loader's derivation.\n\n* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AxisRoleEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "axis_role_derived": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Cache of `load_catalog`'s slug-table derivation. Read only when `axis_role` is blank; never overwrites an authored value."
+          },
           "translate": {
             "allOf": [
               {
@@ -16700,6 +17769,7 @@
           }
         },
         "required": [
+          "axis_role_derived",
           "id",
           "name",
           "revision",
@@ -16779,6 +17849,19 @@
             ],
             "description": "What to translate: 'all' = title + options, 'title' = title only, 'none' = nothing\n\n* `all` - All (title + options)\n* `title` - Title only\n* `none` - None"
           },
+          "axis_role": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Which classified axis this feature IS — `make`, `model`, `generation`, `year`, `mileage` — or null. It is what a storefront reads to build a «more of this make» link, or an AI descent to fill make before model, instead of matching slugs against a table of its own.\n\n* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AxisRoleEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
           "rules": {
             "description": "Conditional rules (closed grammar). Validated by stapel-attributes."
           },
@@ -16805,6 +17888,7 @@
           }
         },
         "required": [
+          "axis_role",
           "config",
           "id",
           "name"
@@ -17034,6 +18118,22 @@
             "description": "Form section; sections order by first appearance.",
             "maxLength": 100
           },
+          "axis_role": {
+            "description": "Which classified axis this feature IS, when it is one: `make`, `model`, `generation`, `year`, `mileage`. Blank (the default) for the overwhelming majority of features, which describe an object rather than organise it. An authored value wins over the loader's derivation.\n\n* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AxisRoleEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "axis_role_derived": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Cache of `load_catalog`'s slug-table derivation. Read only when `axis_role` is blank; never overwrites an authored value."
+          },
           "translate": {
             "allOf": [
               {
@@ -17053,6 +18153,7 @@
           }
         },
         "required": [
+          "axis_role_derived",
           "id",
           "name",
           "revision",
@@ -17229,6 +18330,18 @@
             "default": "public",
             "description": "Who may READ a stored value: 'public' = anyone (the default), 'owner' = the object's owner and staff, 'staff' = staff only. The value is still required, validated and stored either way; a non-public feature is simply never a title and never a badge.\n\n* `public` - public\n* `owner` - owner\n* `staff` - staff"
           },
+          "axis_role_authored": {
+            "default": "",
+            "description": "Which classified axis this feature IS, when it is one. Blank (the default) leaves it to `load_catalog`'s slug-table derivation; a value pins it and wins over derivation. Named for the AUTHORING column on purpose: it lines up with the key `FeatureSerializer` reads it back under, so an editor round-trip cannot pin a role the derivation merely guessed.\n\n* `` - \n* `make` - make\n* `model` - model\n* `generation` - generation\n* `year` - year\n* `mileage` - mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FeatureEditorFeatureAxisRoleAuthoredEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
           "translate": {
             "allOf": [
               {
@@ -17280,6 +18393,17 @@
             "default": 0
           }
         }
+      },
+      "FeatureEditorFeatureAxisRoleAuthoredEnum": {
+        "enum": [
+          "make",
+          "model",
+          "generation",
+          "year",
+          "mileage"
+        ],
+        "type": "string",
+        "description": "* `` - \n* `make` - make\n* `model` - model\n* `generation` - generation\n* `year` - year\n* `mileage` - mileage"
       },
       "FeatureEditorFeatureTranslateEnum": {
         "enum": [
@@ -17449,6 +18573,19 @@
             ],
             "description": "What to translate: 'all' = title + options, 'title' = title only, 'none' = nothing\n\n* `all` - All (title + options)\n* `title` - Title only\n* `none` - None"
           },
+          "axis_role": {
+            "readOnly": true,
+            "nullable": true,
+            "description": "Which classified axis this feature IS — `make`, `model`, `generation`, `year`, `mileage` — or null. It is what a storefront reads to build a «more of this make» link, or an AI descent to fill make before model, instead of matching slugs against a table of its own.\n\n* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AxisRoleEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
           "rules": {
             "description": "Conditional rules (closed grammar). Validated by stapel-attributes."
           },
@@ -17480,6 +18617,7 @@
           }
         },
         "required": [
+          "axis_role",
           "config",
           "divergent",
           "id",
@@ -18010,6 +19148,9 @@
                 "$ref": "#/components/schemas/Video"
               },
               {
+                "$ref": "#/components/schemas/Audio"
+              },
+              {
                 "$ref": "#/components/schemas/FileModel"
               }
             ],
@@ -18024,7 +19165,7 @@
           "type": {
             "type": "string",
             "nullable": true,
-            "description": "File type if found (image or video)",
+            "description": "File type if found (image, video, audio or file)",
             "example": "image"
           }
         },
@@ -21155,7 +22296,7 @@
           },
           "slug": {
             "type": "string",
-            "maxLength": 100
+            "maxLength": 255
           },
           "catalog_icon": {
             "type": "string",
@@ -21191,6 +22332,14 @@
           "children_axis_label": {
             "type": "string",
             "maxLength": 200
+          },
+          "children_axis_tag": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "children_expand_by": {
+            "type": "string",
+            "maxLength": 100
           },
           "children_pks": {
             "type": "array",
@@ -21423,6 +22572,22 @@
             "type": "string",
             "description": "Form section; sections order by first appearance.",
             "maxLength": 100
+          },
+          "axis_role": {
+            "description": "Which classified axis this feature IS, when it is one: `make`, `model`, `generation`, `year`, `mileage`. Blank (the default) for the overwhelming majority of features, which describe an object rather than organise it. An authored value wins over the loader's derivation.\n\n* `make` - Make (brand / vendor / manufacturer)\n* `model` - Model\n* `generation` - Generation\n* `year` - Year of manufacture\n* `mileage` - Mileage",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AxisRoleEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              }
+            ]
+          },
+          "axis_role_derived": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Cache of `load_catalog`'s slug-table derivation. Read only when `axis_role` is blank; never overwrites an authored value."
           },
           "translate": {
             "allOf": [
@@ -21880,6 +23045,22 @@
           "storage_limit_bytes"
         ]
       },
+      "PostureInfo": {
+        "type": "object",
+        "description": "What kind of installation this is, as the deployment declares it.\n\nThe companion of email_mock/phone_mock: those say a channel is stubbed,\nthis says whether that is meant. A stand can be production — public host,\nreal TLS, real data — and not yet advertised, and it declares that as\n``stage=\"prototype\"`` on its posture\n(``stapel_core.django.presets``). Read-only transparency: nothing here\ngates anything, and a monitor uses it to tell a prototype from prod.",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "Declared deployment posture, or null when there is none"
+          },
+          "stage": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"live\" or \"prototype\", or null when no posture is declared"
+          }
+        }
+      },
       "PrecisionEnum": {
         "enum": [
           "year",
@@ -22088,10 +23269,16 @@
             "nullable": true,
             "description": "The self-declared trading capacity, or `None` when unset.\n\n`None` covers both \"this deployment's profile model carries no\n`seller_type` field at all\" and \"it carries one and nobody filled it\nin\" — a caller cannot tell the two apart from this response, which is\ncorrect: neither means anything the caller should act on.",
             "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
           }
         },
         "required": [
           "avatar_image",
+          "created_at",
           "followers_count",
           "following_count",
           "relationship_status",
@@ -22168,12 +23355,18 @@
             "nullable": true,
             "description": "Self-declared trading capacity (\"private\"/\"business\"), or null when this deployment's profile carries no such field or the person never declared one",
             "example": "business"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 time this PROFILE was created — the tenure a seller page renders as \"on the site since March 2024\". Not a sign-in time and not an activity signal",
+            "example": "2025-01-15T12:00:00Z"
           }
         },
         "required": [
           "avatar",
           "avatar_image",
           "avatar_source",
+          "created_at",
           "display_name",
           "followers_count",
           "following_count",
@@ -23429,7 +24622,7 @@
           },
           "error_language": {
             "type": "string",
-            "description": "Active Django locale `error` was rendered in (e.g"
+            "description": "The language `error` is written in (e.g. 'en', 'ru'),"
           }
         },
         "required": [
@@ -23656,29 +24849,47 @@
       },
       "SubscriptionResponse": {
         "type": "object",
-        "description": "SubscriptionResponse(plan: str, status: str, stripe_subscription_id: Optional[str], current_period_start: Optional[str], current_period_end: Optional[str], cancelled_at: Optional[str])",
+        "description": "The caller's subscription, including the users who have none.\n\n``GET /subscription`` answers for every authenticated user, so this\nshape has to be able to say \"there is no subscription here\" — which is\nwhat ``is_paid: false`` means. ``plan``/``status`` cannot say it: a\nfree-plan row reads ``plan=\"free\", status=\"active\"``, and a client\nthat decides from those offers a cancel button to somebody who never\npaid.\n\nThe three booleans are the whole decision, and they are computed\nserver-side on purpose: ``is_active`` compares ``current_period_end``\nagainst the clock, and a client's clock is not the one that bills.",
         "properties": {
           "plan": {
-            "type": "string"
+            "type": "string",
+            "description": "Plan slug. ``free`` for an account that never subscribed"
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "description": "The provider's status, mirrored"
           },
           "stripe_subscription_id": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "The provider object, or null"
           },
           "current_period_start": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "ISO-8601, or null when unknown"
           },
           "current_period_end": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "ISO-8601 renewal/expiry moment, or null"
           },
           "cancelled_at": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "ISO-8601 moment the cancellation was requested"
+          },
+          "cancel_at_period_end": {
+            "type": "boolean",
+            "description": "The subscriber has cancelled and service"
+          },
+          "is_paid": {
+            "type": "boolean",
+            "description": "There is a provider subscription behind this row (plan is"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "The subscription entitles the user right now — an"
           }
         },
         "required": [
