@@ -167,6 +167,21 @@ STAPEL_GDPR = {
     # Bump whenever DATA_OWNERS changes — a closure records the inventory
     # version that certified it (gdpr.W003).
     "DATA_OWNERS_VERSION": "2026-08-23.1",
+    # A data export is a ZIP of everything this system knows about a person,
+    # so it goes to a root NO static or media location block can reach. Named
+    # here rather than left to the default for the same reason STATIC_ROOT and
+    # MEDIA_ROOT are named above: this file is what a reader copies.
+    #
+    # stapel-gdpr 0.7.0 moved the default off MEDIA_ROOT — before it, the
+    # archive landed in MEDIA_ROOT/gdpr/exports, which the ordinary
+    # `location /media { alias ...; }` serves unauthenticated and cacheable.
+    # A root inside MEDIA_ROOT/STATIC_ROOT is now gdpr.E013 and refuses the
+    # boot; naming none is gdpr.W013, which matters the moment the celery
+    # worker stops sharing a filesystem with the web process (this service is
+    # a monolith, so it does — but the example should not teach the shape that
+    # breaks when it is split). A deployment that splits them points
+    # STORAGES["stapel_gdpr_exports"] at a store both can read instead.
+    "EXPORT_ROOT": os.getenv("GDPR_EXPORT_ROOT", str(BASE_DIR / "var" / "private" / "gdpr")),
 }
 
 from stapel_core.django.openapi.swagger import get_spectacular_settings
