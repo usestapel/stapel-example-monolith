@@ -1,0 +1,35 @@
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+exclude = ["migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Django settings tiers star-import the layer below by design (base ->
+# dev -> local, base -> prod — Django's own convention): every name a lower
+# tier defines looks "undefined" to a linter reading a higher tier's file in
+# isolation. Not a bug — silence F403/F405 for this directory only.
+#
+# E402 belongs here for the same reason and only here: a settings module
+# legitimately imports something AFTER the block that configures what the
+# import will read (a spectacular helper after REST_FRAMEWORK, a backend
+# after its own settings). Anywhere else in a project that is an accident.
+#
+# What is deliberately NOT ignored: F541 (an f-string with no placeholder).
+# That is a leftover from a value that used to be interpolated, not an idiom
+# — this scaffold does not emit one, and ignoring it fleet-wide would hide
+# the next one.
+"config/settings/*.py" = ["F403", "F405", "E402"]
+
+# Django's own `startapp` stubs: `from django.db import models` in an app
+# with no models yet, `from django.contrib import admin` in one with nothing
+# registered. Everybody keeps them, because the next edit to the file needs
+# them, and a scaffold that deleted them would be handing out a file that
+# fails the moment it is used.
+"apps/*/models.py" = ["F401"]
+"apps/*/admin.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "apps", "tests"]

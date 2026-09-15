@@ -18,11 +18,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 with open(BASE_DIR / "version.txt") as v_file:
     APP_VERSION_NUMBER = v_file.read().strip()
 
-STATIC_ROOT = f"/app/staticfiles/app/"
-STATIC_URL = f"/staticfiles/app/"
+# THE CONTAINER'S PATHS ARE THE CONTAINER'S, not this file's. Compose mounts
+# the shared volumes at /app/staticfiles and /app/media and sets these two env
+# vars to point into them; off the container — a laptop, CI, a scaffold test —
+# there is no /app and its nearest existing ancestor is /, owned by root. A
+# hardcoded container path therefore made `manage.py check` fail everywhere
+# that is not a container, which is where the check is most often run.
+#
+# `stapel_core.storage` (E001/E002) refuses a storage root it cannot create or
+# write, and it is right to: a service whose media root is unwritable does not
+# fail, it runs DEGRADED — every upload raising PermissionError while the API
+# answers 2xx. The fix is a default that is writable wherever the project is
+# checked out, not a quieter gate.
+STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "var" / "staticfiles" / "app"))
+STATIC_URL = "/staticfiles/app/"
 STATICFILES_DIRS = get_staticfiles_dirs(BASE_DIR)
-MEDIA_ROOT = f"/app/media/app/"
-MEDIA_URL = f"/media/app/"
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", str(BASE_DIR / "var" / "media" / "app"))
+MEDIA_URL = "/media/app/"
 
 # Dev fallbacks live in dev.py; prod.py refuses to start without real values.
 SECRET_KEY = os.getenv("SECRET_KEY", "")
