@@ -256,6 +256,14 @@
     "owner": "stapel_auth"
   },
   {
+    "code": "error.400.device_target_required",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Send exactly one of: \"token\" or \"device_id\".",
+    "owner": "stapel_notifications"
+  },
+  {
     "code": "error.400.display_name_emoji",
     "status": 400,
     "params": [],
@@ -592,6 +600,14 @@
     "owner": "stapel_auth"
   },
   {
+    "code": "error.400.image_type_required",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "Image type is required",
+    "owner": "stapel_cdn"
+  },
+  {
     "code": "error.400.invalid_ad_id",
     "status": 400,
     "params": [],
@@ -640,6 +656,14 @@
     "remediation": "fix_input",
     "en": "Invalid currency code",
     "owner": "stapel_profiles"
+  },
+  {
+    "code": "error.400.invalid_device_id",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "device_id must be an opaque random value of 16 to 255 characters (letters, digits and - . _ ~ : + / =), generated once per installation.",
+    "owner": "stapel_notifications"
   },
   {
     "code": "error.400.invalid_format",
@@ -962,6 +986,14 @@
     "owner": "stapel_billing"
   },
   {
+    "code": "error.400.signup_context_invalid",
+    "status": 400,
+    "params": [],
+    "remediation": "fix_input",
+    "en": "The signup_context object is malformed. Expected at most 16 keys of letters, digits and _ . : -, each with a short text, number, true/false or null value, at most 2048 bytes in all.",
+    "owner": "stapel_auth"
+  },
+  {
     "code": "error.400.sso_invalid_response",
     "status": 400,
     "params": [],
@@ -996,10 +1028,17 @@
   {
     "code": "error.400.too_many_ids",
     "status": 400,
-    "params": [],
+    "params": [
+      "requested",
+      "limit"
+    ],
     "remediation": "fix_input",
-    "en": "Too many ids in one request. Send fewer, or \"all\": true.",
-    "owner": "stapel_profiles"
+    "en": "Too many ids: {requested} requested, at most {limit} per batch request",
+    "owner": "stapel_core",
+    "param_types": {
+      "limit": "integer",
+      "requested": "integer"
+    }
   },
   {
     "code": "error.400.too_many_refs",
@@ -1567,6 +1606,14 @@
     "owner": "stapel_workspaces"
   },
   {
+    "code": "error.404.media_not_found",
+    "status": 404,
+    "params": [],
+    "remediation": "retry",
+    "en": "Media not found or link expired",
+    "owner": "stapel_cdn"
+  },
+  {
     "code": "error.404.member_not_found",
     "status": 404,
     "params": [],
@@ -1587,7 +1634,7 @@
     "status": 404,
     "params": [],
     "remediation": "retry",
-    "en": "Not found.",
+    "en": "Requested resource not found",
     "owner": "stapel_core"
   },
   {
@@ -1794,6 +1841,14 @@
     "owner": "stapel_gdpr"
   },
   {
+    "code": "error.409.no_billing_account",
+    "status": 409,
+    "params": [],
+    "remediation": "verify",
+    "en": "There is no billing account at the payment provider to manage yet",
+    "owner": "stapel_billing"
+  },
+  {
     "code": "error.409.oauth_account_linked_elsewhere",
     "status": 409,
     "params": [],
@@ -1933,11 +1988,18 @@
     "code": "error.422.blocked",
     "status": 422,
     "params": [
+      "retry_after_display",
+      "retry_after",
       "retry_after_minutes"
     ],
     "remediation": "wait_and_retry",
-    "en": "Account temporarily blocked. Try again in {retry_after_minutes} minutes.",
-    "owner": "stapel_auth"
+    "en": "Account temporarily blocked. Try again in {retry_after_display} ({retry_after} s, about {retry_after_minutes} min).",
+    "owner": "stapel_auth",
+    "param_types": {
+      "retry_after": "integer",
+      "retry_after_display": "string",
+      "retry_after_minutes": "integer"
+    }
   },
   {
     "code": "error.422.unprocessable_entity",
@@ -1951,11 +2013,18 @@
     "code": "error.423.account_locked",
     "status": 423,
     "params": [
+      "retry_after_display",
+      "retry_after",
       "retry_after_minutes"
     ],
     "remediation": "wait_and_retry",
-    "en": "Account temporarily locked due to too many failed attempts. Try again in {retry_after_minutes} minutes.",
-    "owner": "stapel_auth"
+    "en": "Account temporarily locked due to too many failed attempts. Try again in {retry_after_display} ({retry_after} s, about {retry_after_minutes} min).",
+    "owner": "stapel_auth",
+    "param_types": {
+      "retry_after": "integer",
+      "retry_after_display": "string",
+      "retry_after_minutes": "integer"
+    }
   },
   {
     "code": "error.423.locked",
@@ -2033,11 +2102,18 @@
     "code": "error.429.rate_limit",
     "status": 429,
     "params": [
+      "retry_after_display",
+      "retry_after",
       "retry_after_minutes"
     ],
     "remediation": "wait_and_retry",
-    "en": "Too many attempts. Try again in {retry_after_minutes} minutes.",
-    "owner": "stapel_core"
+    "en": "Too many attempts. Try again in {retry_after_display} ({retry_after} s, about {retry_after_minutes} min).",
+    "owner": "stapel_core",
+    "param_types": {
+      "retry_after": "integer",
+      "retry_after_display": "string",
+      "retry_after_minutes": "integer"
+    }
   },
   {
     "code": "error.429.too_many_requests",
@@ -2136,6 +2212,14 @@
     "remediation": "wait_and_retry",
     "en": "The profiles service is unavailable; try again later",
     "owner": "stapel_workspaces"
+  },
+  {
+    "code": "error.503.translate.unavailable",
+    "status": 503,
+    "params": [],
+    "remediation": "retry",
+    "en": "Content translation is not available here",
+    "owner": "stapel_translate"
   },
   {
     "code": "error.503.verification_unavailable",
