@@ -27,6 +27,8 @@ on:
   # it, not left to rot alongside it.
   schedule:
     - cron: "0 */6 * * *"
+  # Re-run on demand after an upstream release, without a commit here.
+  workflow_dispatch:
 
 jobs:
   codegen-check:
